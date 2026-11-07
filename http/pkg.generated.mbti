@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "pingguomiaomiao/docmunch/http"
+
+// Values
+pub fn default_fetch_options() -> FetchOptions
+
+pub fn is_private_host(String) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct FetchOptions {
+  timeout_ms : Int32
+  max_bytes : Int32
+  allow_private : Bool
+}
+
+// Type aliases
+
+// Traits

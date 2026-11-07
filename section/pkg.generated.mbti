@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "pingguomiaomiao/docmunch/section"
+
+import {
+  "pingguomiaomiao/docmunch/core",
+}
+
+// Values
+pub fn parse_atx(String) -> Heading?
+
+pub fn split_document(String, String, String) -> Array[@core.Section]
+
+// Errors
+
+// Types and methods
+pub(all) struct Heading {
+  start : Int32
+  level : Int32
+  title : String
+}
+
+// Type aliases
+
+// Traits

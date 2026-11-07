@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "pingguomiaomiao/docmunch/core"
+
+// Values
+pub let index_version : Int32
+
+pub fn make_section_id(String, String, String, Int32) -> String
+
+pub fn slugify(String) -> String
+
+pub fn utf8_len(String) -> Int32
+
+pub fn utf8_len_of_char(Char) -> Int32
+
+// Errors
+
+// Types and methods
+pub(all) struct DocIndex {
+  repo : String
+  doc_paths : Array[String]
+  sections : Array[Section]
+  index_version : Int32
+}
+
+pub(all) struct Section {
+  id : String
+  repo : String
+  doc_path : String
+  title : String
+  level : Int32
+  byte_start : Int32
+  byte_end : Int32
+  parent_id : String
+}
+pub fn Section::byte_len(Self) -> Int32
+pub fn Section::is_root(Self) -> Bool
+
+// Type aliases
+
+// Traits
