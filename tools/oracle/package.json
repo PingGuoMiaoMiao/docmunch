@@ -1,0 +1,13 @@
+{
+  "name": "docmunch-oracle",
+  "private": true,
+  "type": "module",
+  "description": "Test-time oracle: Mozilla Readability reference output for differential tests.",
+  "scripts": {
+    "oracle": "node readability-oracle.mjs ../../fixtures/html ./out"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "jsdom": "^26.0.0"
+  }
+}

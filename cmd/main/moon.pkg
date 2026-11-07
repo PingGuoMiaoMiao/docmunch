@@ -1,0 +1,5 @@
+import {
+  "pingguomiaomiao/docmunch/mcp",
+}
+
+pkgtype(kind: "executable")
