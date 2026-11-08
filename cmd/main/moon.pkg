@@ -1,5 +1,8 @@
 import {
-  "pingguomiaomiao/docmunch/mcp",
+  "moonbitlang/core/env",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "pingguomiaomiao/docmunch/http",
 }
 
 pkgtype(kind: "executable")

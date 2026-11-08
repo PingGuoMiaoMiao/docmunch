@@ -1,19 +1,137 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "pingguomiaomiao/docmunch/http"
 
+import {
+  "tonyfettes/url",
+}
+
 // Values
+pub fn cache_bin_path(String, String) -> String
+
+pub fn cache_key(String) -> String
+
+pub fn cache_meta_path(String, String) -> String
+
+pub async fn check_target(Target, FetchOptions) -> Unit raise FetchError
+
+pub fn content_type_allowed(String) -> Bool
+
 pub fn default_fetch_options() -> FetchOptions
+
+pub fn detect(Target, String) -> Platform
+
+pub fn detect_from_html(String) -> Platform?
+
+pub fn detect_from_url(Target) -> Platform
+
+pub async fn fetch(String, options? : FetchOptions) -> FetchResult raise FetchError
 
 pub fn is_private_host(String) -> Bool
 
+pub fn is_private_ip(String) -> Bool
+
+pub fn is_private_ipv4(String) -> Bool
+
+pub fn is_private_ipv6(String) -> Bool
+
+pub fn parse_int_or(String, Int32) -> Int32
+
+pub fn raw_dir(String) -> String
+
+pub fn redirect_allowed(Target, Target, Int32, Int32) -> Bool
+
+pub async fn save_entry(String, String, Bytes, String) -> Unit raise FetchError
+
+pub fn sha256_hex(Bytes) -> String
+
+pub fn split_lines(String) -> Array[String]
+
+pub fn strip_port(String) -> String
+
 // Errors
+pub suberror FetchError {
+  BadUrl(String)
+  UnsupportedScheme(String)
+  Blocked(String)
+  DnsError(String)
+  NetworkError(String)
+  TooLarge(Int32)
+  TooManyRedirects(Int32)
+  Timeout
+  UnsupportedContentType(String)
+  CacheError(String)
+}
+pub fn FetchError::code(Self) -> String
+pub fn FetchError::message(Self) -> String
 
 // Types and methods
 pub(all) struct FetchOptions {
   timeout_ms : Int32
   max_bytes : Int32
+  max_redirects : Int32
   allow_private : Bool
+  user_agent : String
+  accept : String
+  use_cache : Bool
+  cache_root : String
 }
+
+pub(all) struct FetchResult {
+  requested_url : String
+  final_url : String
+  status : Int32
+  content_type : String
+  bytes_len : Int32
+  body : String
+  charset_warning : Bool
+  platform : Platform
+  cache_path : String
+}
+
+pub(all) enum Platform {
+  GitHub
+  GitLab
+  MoonBit
+  Docusaurus
+  VitePress
+  MkDocs
+  Sphinx
+  ReadTheDocs
+  GitBook
+  Hugo
+  JupyterBook
+  Confluence
+  Notion
+  Docsify
+  Nextjs
+  Generic
+}
+pub fn Platform::name(Self) -> String
+
+pub(all) struct RateLimiter {
+  interval_ms : Int32
+  next_at : Map[String, Int32]
+}
+pub fn RateLimiter::new(Int32) -> Self
+pub fn RateLimiter::reserve(Self, String, Int32) -> Int32
+
+pub(all) enum Scheme {
+  Http
+  Https
+}
+
+pub(all) struct Target {
+  url : @url.Url
+  scheme : Scheme
+}
+pub fn Target::default_port(Self) -> Int32
+pub fn Target::from_url(@url.Url) -> Self raise FetchError
+pub fn Target::host(Self) -> String
+pub fn Target::href(Self) -> String
+pub fn Target::is_secure(Self) -> Bool
+pub fn Target::parse(String) -> Self raise FetchError
+pub fn Target::path(Self) -> String
+pub fn Target::resolve(Self, String) -> Self raise FetchError
 
 // Type aliases
 

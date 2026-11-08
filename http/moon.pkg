@@ -1,1 +1,12 @@
-// Fetch stage: depends on moonbitlang/async in P1.
+// Fetch stage: HTTP client, SSRF policy, raw cache, platform fingerprinting.
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/http" @httpclient,
+  "moonbitlang/async/fs",
+  "moonbitlang/async/socket",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+  "tonyfettes/url",
+  "gmlewis/sha256",
+}

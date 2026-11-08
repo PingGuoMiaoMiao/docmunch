@@ -101,3 +101,40 @@
 - **决策**：锁小版本；`http` 与 `fs` 两处只经由内部 shim 调用。
 - **后果**：升级成本集中在一个文件。
 - **被否**：直接用 `core/async` —— 仍是实验包，需 `allow-experimental-packages`。
+
+---
+
+## D15 — 缓存键与布局
+
+- **背景**：P1 需要缓存原始字节，P4/P5 的字节偏移又依赖"同一份原文"。
+- **决策**：键 = `sha256(url)`；布局 `<root>/raw/<key>.bin` + `<key>.meta`（文本 key=value，便于人读）；写入走 tmp + rename 原子替换。
+- **后果**：同 URL 稳定命中；URL 不同即不同文件。meta 里记 `final_url`，便于识别重定向后的真实来源。
+- **被否**：按 `host/path` 直接落盘 —— 需要 URL 规范化，且路径穿越风险更大。
+
+## D16 — 超时用 `with_timeout` 包住整条链路
+
+- **背景**：`async` 是协作式调度，超时必须由运行时取消，而不是在循环里看表。
+- **决策**：`fetch` 入口用 `@async.with_timeout(timeout_ms, ...)` 包住 DNS + 连接 + 读体；超时映射为 `Timeout`，其余错误按 `FetchError::_` 透传、未知错误降级为 `NetworkError`。
+- **后果**：超时能真正中断 socket 读；代价是超时粒度为整次请求（不含重试预算）。
+- **被否**：每个 read 单独计时 —— 语义复杂且无法约束 DNS/TLS 握手。
+
+## D17 — 手动跟随 3xx，每跳都过策略
+
+- **背景**：`@http.Client` 是否自动跟随重定向未在文档中声明，且自动跟随会绕过 SSRF 检查。
+- **决策**：用 `get_stream` 自己处理 3xx：读 `Location` → `skip_response_body` → 解析相对地址 → `redirect_allowed` 校验 → 下一跳重新 `check_target`。上限 `max_redirects`（默认 5）。
+- **后果**：每一跳都可审计；跨域 https 跳转允许，https→http 一律拒绝。
+- **被否**：依赖库自动跟随 —— 安全策略不可见。
+
+## D18 — 4xx/5xx 返回结果而非抛错
+
+- **背景**：MCP 工具需要把 404 如实报告给用户，而不是让整次调用失败。
+- **决策**：`fetch` 只在"取不到 HTTP 响应"时抛错；拿到响应后无论状态码都返回 `FetchResult`（含 status）。
+- **后果**：调用方负责判定；`TooLarge`/`Timeout`/`Blocked` 仍是错误，因为它们没有可用的响应体。
+- **被否**：4xx 抛错 —— 与"把文档站当数据源"的用法冲突（重定向到登录页很常见）。
+
+## D19 — 平台 marker 顺序：框架优先于托管商
+
+- **背景**：`docs.python.org` 页面里同时含 `sphinx` 与 `readthedocs` 字样，首轮被误判为 ReadTheDocs。
+- **决策**：HTML marker 按"具体框架 → 托管平台"排序（sphinx 先于 readthedocs）；`*.readthedocs.io` 由域名规则兜底命中 ReadTheDocs。
+- **后果**：Sphinx 站点判为 `sphinx`，RTD 托管站判为 `readthedocs`。
+- **被否**：只留域名规则 —— 自建 Sphinx 站会全部落到 generic。

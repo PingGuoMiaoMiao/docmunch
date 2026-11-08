@@ -14,8 +14,8 @@ non-commercial-licensed, so only its *design* was studied).
 | Phase | Scope | State |
 | --- | --- | --- |
 | P0 | module skeleton, section model, id/byte-offset contract | ✅ done |
-| P1 | fetch + platform detect | ⏳ next |
-| P2 | DOM + Readability-compatible extraction | ⏳ |
+| P1 | fetch: HTTPS/streaming/redirects, SSRF guard, raw cache, platform detect | ✅ done |
+| P2 | DOM + Readability-compatible extraction | ⏳ next |
 | P3 | HTML → CommonMark | ⏳ |
 | P4 | section split (ATX only today) | 🟡 partial |
 | P5 | index store, search, byte-range retrieval | ⏳ |
@@ -26,8 +26,21 @@ non-commercial-licensed, so only its *design* was studied).
 ```sh
 moon build --target native
 moon test
-moon run cmd/main --target native
+
+# fetch one URL: prints status/bytes/platform, writes .doc-index/raw/<sha256>.bin
+moon run cmd/main --target native -- fetch https://docs.moonbitlang.cn/language/ffi.html
+
+# platform fingerprint only (no network)
+moon run cmd/main --target native -- detect https://github.com/mozilla/readability
+
+# 10-site smoke run (see docs/p1-smoke.md)
+moon run cmd/main --target native -- smoke fixtures/smoke-urls.txt
 ```
+
+`fetch` flags: `--out PATH`, `--allow-private`, `--no-cache`, `--max-bytes N`, `--timeout MS`.
+
+Security default: loopback/RFC1918/link-local targets are refused unless
+`--allow-private` is passed (the MCP server runs on the user's machine).
 
 ## Layout
 
@@ -59,7 +72,8 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 
 - [docs/pre-research.md](docs/pre-research.md) — ecosystem survey, reference-implementation
   teardown, algorithm notes, and every source link used.
-- [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D14).
+- [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D19).
+- [docs/p1-smoke.md](docs/p1-smoke.md) — P1 smoke run against 10 real documentation sites.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 
