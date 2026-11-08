@@ -8,12 +8,13 @@ Exit code 0 = all assertions passed.
 """
 
 import json
+import os
 import pathlib
 import subprocess
 import sys
 import threading
 
-EXE = pathlib.Path("_build/native/debug/build/cmd/main/main.exe")
+EXE = pathlib.Path("_build/native/debug/build/cmd/main") / ("main.exe" if os.name == "nt" else "main")
 ROOT = ".doc-index-mcp"
 
 

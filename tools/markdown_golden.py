@@ -9,11 +9,12 @@ Goldens are produced by the real binary, so they guard the whole
 extract -> markdown pipeline, not just the converter unit tests.
 """
 
+import os
 import pathlib
 import subprocess
 import sys
 
-EXE = pathlib.Path("_build/native/debug/build/cmd/main/main.exe")
+EXE = pathlib.Path("_build/native/debug/build/cmd/main") / ("main.exe" if os.name == "nt" else "main")
 HTML_DIR = pathlib.Path("fixtures/html")
 MD_DIR = pathlib.Path("fixtures/markdown")
 

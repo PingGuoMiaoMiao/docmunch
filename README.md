@@ -15,11 +15,12 @@ non-commercial-licensed, so only its *design* was studied).
 | --- | --- | --- |
 | P0 | module skeleton, section model, id/byte-offset contract | ✅ done |
 | P1 | fetch: HTTPS/streaming/redirects, SSRF guard, raw cache, platform detect | ✅ done |
-| P2 | DOM helpers + Readability-compatible extraction + metadata | ✅ done (3/3 fixtures, avg Jaccard 0.92) |
+| P2 | DOM helpers + Readability-compatible extraction + metadata | ✅ done (4/4 fixtures, avg Jaccard 0.91) |
 | P3 | HTML → CommonMark, link absolutization, golden files | ✅ done |
 | P4 | section split: ATX + setext, fence-aware, hashes, stable slugs | ✅ done |
 | P5 | index store, search, byte-range retrieval | ✅ done |
 | P6 | MCP server (stdio, 8 tools) | ✅ done |
+| P7 | link-density pruning, CI, benchmark, delivery docs | ✅ done |
 
 ## Quick start
 

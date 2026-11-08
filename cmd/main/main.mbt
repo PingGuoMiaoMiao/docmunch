@@ -17,6 +17,7 @@ fn usage() -> Unit {
   println("  docmunch search <repo> <query> [--root DIR]")
   println("  docmunch section <repo> <id> [--verify] [--root DIR]")
   println("  docmunch repos [--root DIR]")
+  println("  docmunch delete <repo> [--root DIR]")
   println("  docmunch mcp [--root DIR]        # stdio MCP server")
   println("  docmunch smoke <url-file>")
 }
@@ -433,6 +434,19 @@ async fn cmd_mcp(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn cmd_delete(repo : String, args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let dir = @index.repo_dir(root, repo)
+  @fs.rmdir(dir, recursive=true) catch {
+    e => {
+      println("error=delete \{e.to_string()}")
+      return
+    }
+  }
+  println("deleted=\{repo}")
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -490,6 +504,12 @@ async fn main {
     cmd_section(args[2], args[3], args)
   } else if cmd == "repos" {
     cmd_repos(args)
+  } else if cmd == "delete" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_delete(args[2], args)
   } else if cmd == "mcp" {
     cmd_mcp(args)
   } else if cmd == "smoke" {

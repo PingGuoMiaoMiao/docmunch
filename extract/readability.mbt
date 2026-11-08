@@ -388,6 +388,74 @@ pub fn extract_main(doc : @html.Document) -> Int32 {
 }
 
 ///|
+/// Bottom-up link text length per node: a link's whole subtree counts as link
+/// text, so a container made of links scores high and can be dropped.
+fn link_lengths(doc : @html.Document, root : Int32) -> Map[Int32, Int32] {
+  let lengths : Map[Int32, Int32] = Map([])
+  fn visit(id : Int32) -> (Int32, Int32) {
+    let mut text_total = 0
+    let mut link_total = 0
+    let is_link = tag_name(doc, id) == "a"
+    match doc.get_node(id) {
+      Some(@htmlsrc.Node::TextNode(t)) => text_total = t.length()
+      _ => ()
+    }
+    for child in doc.get_children(id) {
+      let (c_text, c_link) = visit(child)
+      text_total = text_total + c_text
+      link_total = link_total + c_link
+    }
+    if is_link {
+      link_total = text_total
+    }
+    lengths[id] = link_total
+    (text_total, link_total)
+  }
+  ignore(visit(root))
+  lengths
+}
+
+///|
+/// Drop blocks whose text is mostly link text (nav/table-of-contents islands).
+pub fn strip_link_blocks(doc : @html.Document) -> Unit {
+  let root = doc.body_element
+  if root < 0 {
+    return
+  }
+  let text = text_lengths(doc, root)
+  let links = link_lengths(doc, root)
+  for id in collect_elements(doc, root) {
+    if is_detached(doc, id) {
+      continue
+    }
+    let tag = tag_name(doc, id)
+    if !(tag == "div" ||
+      tag == "section" ||
+      tag == "ul" ||
+      tag == "ol" ||
+      tag == "p" ||
+      tag == "table" ||
+      tag == "nav") {
+      continue
+    }
+    let total = match text.get(id) {
+      Some(v) => v
+      None => 0
+    }
+    if total < 120 {
+      continue
+    }
+    let link = match links.get(id) {
+      Some(v) => v
+      None => 0
+    }
+    if link * 100 / total >= 65 {
+      remove_node(doc, id)
+    }
+  }
+}
+
+///|
 fn text_of(doc : @html.Document, id : Int32) -> String {
   if id < 0 {
     return ""
@@ -572,6 +640,7 @@ pub fn extract(html : String, url : String) -> Extracted {
     }
   }
   clean(doc)
+  strip_link_blocks(doc)
   let container = extract_main(doc)
   let text = text_of(doc, container)
   let out_html = body_inner_html(doc)

@@ -12,12 +12,13 @@ Usage: python tools/toc_check.py <file.md> [...]
 """
 
 import hashlib
+import os
 import pathlib
 import re
 import subprocess
 import sys
 
-EXE = pathlib.Path("_build/native/debug/build/cmd/main/main.exe")
+EXE = pathlib.Path("_build/native/debug/build/cmd/main") / ("main.exe" if os.name == "nt" else "main")
 LINE = re.compile(
     r"^(?P<id>.+?)\tlevel=(?P<level>\d+)\tbytes=(?P<start>\d+)-(?P<end>\d+)\thash=(?P<hash>[0-9a-f]{64})\ttitle=(?P<title>.*)$"
 )

@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Toolchain versions
+        run: moon version --all
+
+      - name: Format (advisory)
+        run: moon fmt --check || true
+
+      - name: Unit tests
+        run: moon test
+
+      - name: Build native binary
+        run: moon build --target native
+
+      - name: Markdown goldens
+        run: python tools/markdown_golden.py
+
+      - name: Section byte contract
+        run: python tools/toc_check.py
+
+      - name: MCP end-to-end
+        run: python tools/mcp_e2e.py
