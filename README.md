@@ -17,8 +17,8 @@ non-commercial-licensed, so only its *design* was studied).
 | P1 | fetch: HTTPS/streaming/redirects, SSRF guard, raw cache, platform detect | ✅ done |
 | P2 | DOM helpers + Readability-compatible extraction + metadata | ✅ done (3/3 fixtures, avg Jaccard 0.92) |
 | P3 | HTML → CommonMark, link absolutization, golden files | ✅ done |
-| P4 | section split (ATX only today) | ⏳ next |
-| P5 | index store, search, byte-range retrieval | ⏳ |
+| P4 | section split: ATX + setext, fence-aware, hashes, stable slugs | ✅ done |
+| P5 | index store, search, byte-range retrieval | ⏳ next |
 | P6 | MCP server (stdio) | ⏳ |
 
 ## Quick start
@@ -39,6 +39,10 @@ moon run cmd/main --target native -- extract fixtures/html/readability-readme.ht
 # HTML -> CommonMark (+ absolutized links when the input is a URL)
 moon run cmd/main --target native -- markdown fixtures/html/readability-readme.html --out out.md
 python tools/markdown_golden.py
+
+# section tree with byte offsets + hashes, then verify the byte contract
+moon run cmd/main --target native -- toc fixtures/markdown/readability-readme.md --verify
+python tools/toc_check.py
 
 # compare extraction against the Node Readability oracle
 python tools/compare.py
@@ -86,6 +90,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 - [docs/p1-smoke.md](docs/p1-smoke.md) — P1 smoke run against 10 real documentation sites.
 - [docs/p2-extraction.md](docs/p2-extraction.md) — P2 extraction method, metrics and known gaps.
 - [docs/p3-markdown.md](docs/p3-markdown.md) — P3 HTML→CommonMark rules, validation and known gaps.
+- [docs/p4-sectioning.md](docs/p4-sectioning.md) — P4 section contract, byte-level checks and gaps.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 

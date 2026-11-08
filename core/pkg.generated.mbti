@@ -31,6 +31,7 @@ pub(all) struct Section {
   byte_start : Int32
   byte_end : Int32
   parent_id : String
+  content_hash : String
 }
 pub fn Section::byte_len(Self) -> Int32
 pub fn Section::is_root(Self) -> Bool

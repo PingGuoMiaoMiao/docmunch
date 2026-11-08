@@ -12,6 +12,7 @@ fn usage() -> Unit {
   println("  docmunch detect <url>")
   println("  docmunch extract <url|file> [--allow-private] [--out-html PATH]")
   println("  docmunch markdown <url|file> [--out PATH] [--allow-private]")
+  println("  docmunch toc <file.md> [--verify]")
   println("  docmunch smoke <url-file>")
 }
 
@@ -202,6 +203,31 @@ async fn cmd_markdown(input : String, args : Array[String]) -> Unit {
 }
 
 ///|
+async fn cmd_toc(path : String, args : Array[String]) -> Unit {
+  let text = @fs.read_file(path).text() catch {
+    e => {
+      println("error=read \{e.to_string()}")
+      return
+    }
+  }
+  let sections = @section.split_document("local", path, text)
+  let verify = has_flag(args, "--verify")
+  for s in sections {
+    if verify {
+      let actual = @section.sha256_of(@section.section_text(text, s))
+      let ok = actual == s.content_hash
+      println(
+        "\{s.id}\tlevel=\{s.level}\tbytes=\{s.byte_start}-\{s.byte_end}\thash_ok=\{ok}\ttitle=\{s.title}",
+      )
+    } else {
+      println(
+        "\{s.id}\tlevel=\{s.level}\tbytes=\{s.byte_start}-\{s.byte_end}\thash=\{s.content_hash}\ttitle=\{s.title}",
+      )
+    }
+  }
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -233,6 +259,12 @@ async fn main {
       return
     }
     cmd_markdown(args[2], args)
+  } else if cmd == "toc" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_toc(args[2], args)
   } else if cmd == "smoke" {
     if args.length() < 3 {
       usage()

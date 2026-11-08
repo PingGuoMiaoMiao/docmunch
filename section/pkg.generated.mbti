@@ -8,7 +8,13 @@ import {
 // Values
 pub fn parse_atx(String) -> Heading?
 
+pub fn section_text(String, @core.Section) -> String
+
+pub fn slice_bytes(String, Int32, Int32) -> String
+
 pub fn split_document(String, String, String) -> Array[@core.Section]
+
+pub fn split_lines_with_offsets(String) -> Array[Line]
 
 // Errors
 
@@ -17,6 +23,11 @@ pub(all) struct Heading {
   start : Int32
   level : Int32
   title : String
+}
+
+pub(all) struct Line {
+  text : String
+  start : Int32
 }
 
 // Type aliases

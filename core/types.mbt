@@ -16,6 +16,7 @@ pub(all) struct Section {
   byte_start : Int32
   byte_end : Int32
   parent_id : String
+  content_hash : String
 }
 
 ///|
