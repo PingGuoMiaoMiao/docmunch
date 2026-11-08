@@ -19,7 +19,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P3 | HTML → CommonMark, link absolutization, golden files | ✅ done |
 | P4 | section split: ATX + setext, fence-aware, hashes, stable slugs | ✅ done |
 | P5 | index store, search, byte-range retrieval | ✅ done |
-| P6 | MCP server (stdio) | ⏳ next |
+| P6 | MCP server (stdio, 8 tools) | ✅ done |
 
 ## Quick start
 
@@ -48,6 +48,9 @@ python tools/toc_check.py
 moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
 moon run cmd/main --target native -- search local readability
 moon run cmd/main --target native -- section local "<id from search>" --verify
+
+# MCP server over stdio + raw JSON-RPC end-to-end test
+python tools/mcp_e2e.py
 
 # compare extraction against the Node Readability oracle
 python tools/compare.py
@@ -97,6 +100,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 - [docs/p3-markdown.md](docs/p3-markdown.md) — P3 HTML→CommonMark rules, validation and known gaps.
 - [docs/p4-sectioning.md](docs/p4-sectioning.md) — P4 section contract, byte-level checks and gaps.
 - [docs/p5-index.md](docs/p5-index.md) — P5 storage layout, search scoring and retrieval.
+- [docs/p6-mcp.md](docs/p6-mcp.md) — P6 MCP tool surface, protocol notes and e2e evidence.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 

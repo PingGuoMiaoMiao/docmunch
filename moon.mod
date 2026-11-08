@@ -21,4 +21,5 @@ import {
   "gmlewis/sha256@0.18.2",
   "moonbit-community/html@0.2.3",
   "moonbit-community/cmark@0.4.12",
+  "colmugx/mcp@0.18.2",
 }

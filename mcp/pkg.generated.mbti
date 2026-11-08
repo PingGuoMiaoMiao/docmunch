@@ -1,8 +1,13 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "pingguomiaomiao/docmunch/mcp"
 
+import {
+  "colmugx/mcp/protocol/types",
+  "colmugx/mcp/server",
+}
+
 // Values
-pub fn tool_names() -> Array[String]
+pub fn build_server(String) -> @server.MCPServer raise @types.MCPError
 
 // Errors
 

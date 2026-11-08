@@ -1,1 +1,10 @@
-// Serve stage: will import colmugx/mcp in P6.
+import {
+  "colmugx/mcp",
+  "moonbitlang/core/json",
+  "moonbitlang/async/fs",
+  "pingguomiaomiao/docmunch/core",
+  "pingguomiaomiao/docmunch/http",
+  "pingguomiaomiao/docmunch/extract",
+  "pingguomiaomiao/docmunch/md",
+  "pingguomiaomiao/docmunch/index",
+}

@@ -226,3 +226,18 @@
 - **决策**：`index_version` 不等于当前值时 `load_index` 返回 `None`，调用方重建。
 - **后果**：升级后第一次访问会重建，宁可慢一次也不返回错数据。
 - **被否**：向后兼容迁移 —— 现在只有一个消费者，迁移代码是纯负担。
+---
+
+## D32 — MCP 走 2026-07-28 无状态协议：`server/discover` + 每请求 `_meta`
+
+- **背景**：`colmugx/mcp@0.18.2` 的默认协议是 MCP 2026-07-28；直接发 `initialize` 会得到 `-32601 Method not found`，缺 `_meta` 会得到 `-32602`。
+- **决策**：客户端先 `server/discover`；每个请求的 `params._meta` 带 `protocolVersion` / `clientCapabilities` / `clientInfo`。e2e 脚本按此实现。
+- **后果**：与旧版（2025-11-25）客户端不兼容；SDK 提供 `LegacyClient` 兜底，但我们的服务端只讲新协议。
+- **被否**：兼容双协议 —— 会在服务端引入两套握手状态机，P6 不值得。
+
+## D33 — e2e 用裸 JSON-RPC 而不是同一套 SDK
+
+- **背景**：用 SDK 客户端验证 SDK 服务端，协议层的问题会互相掩盖（比如两边都错同样字段）。
+- **决策**：`tools/mcp_e2e.py` 手写换行分隔的 JSON-RPC 2.0，只依赖标准库。
+- **后果**：协议细节（`_meta`、`resultType`）暴露得很直接；代价是脚本要自己处理超时与进程生命周期。
+- **被否**：Node 版官方 SDK —— 引入 npm 依赖，且会掩盖 MoonBit 侧的序列化差异。

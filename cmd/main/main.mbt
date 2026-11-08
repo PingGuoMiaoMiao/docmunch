@@ -17,6 +17,7 @@ fn usage() -> Unit {
   println("  docmunch search <repo> <query> [--root DIR]")
   println("  docmunch section <repo> <id> [--verify] [--root DIR]")
   println("  docmunch repos [--root DIR]")
+  println("  docmunch mcp [--root DIR]        # stdio MCP server")
   println("  docmunch smoke <url-file>")
 }
 
@@ -418,6 +419,20 @@ async fn cmd_repos(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn cmd_mcp(args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let server = @mcp.build_server(root) catch {
+    e => {
+      println("error=build \{e.message()}")
+      return
+    }
+  }
+  server.run_stdio() catch {
+    e => println("error=transport \{e.to_string()}")
+  }
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -475,6 +490,8 @@ async fn main {
     cmd_section(args[2], args[3], args)
   } else if cmd == "repos" {
     cmd_repos(args)
+  } else if cmd == "mcp" {
+    cmd_mcp(args)
   } else if cmd == "smoke" {
     if args.length() < 3 {
       usage()

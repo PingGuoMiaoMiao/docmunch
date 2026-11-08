@@ -7,6 +7,7 @@ import {
   "pingguomiaomiao/docmunch/md",
   "pingguomiaomiao/docmunch/section",
   "pingguomiaomiao/docmunch/index",
+  "pingguomiaomiao/docmunch/mcp",
 }
 
 pkgtype(kind: "executable")
