@@ -34,6 +34,8 @@ pub fn is_private_ipv4(String) -> Bool
 
 pub fn is_private_ipv6(String) -> Bool
 
+pub fn json_escape(String) -> String
+
 pub fn parse_int_or(String, Int32) -> Int32
 
 pub fn raw_dir(String) -> String

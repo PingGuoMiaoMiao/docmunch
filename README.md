@@ -15,8 +15,8 @@ non-commercial-licensed, so only its *design* was studied).
 | --- | --- | --- |
 | P0 | module skeleton, section model, id/byte-offset contract | ✅ done |
 | P1 | fetch: HTTPS/streaming/redirects, SSRF guard, raw cache, platform detect | ✅ done |
-| P2 | DOM + Readability-compatible extraction | ⏳ next |
-| P3 | HTML → CommonMark | ⏳ |
+| P2 | DOM helpers + Readability-compatible extraction + metadata | ✅ done (3/3 fixtures, avg Jaccard 0.92) |
+| P3 | HTML → CommonMark | ⏳ next |
 | P4 | section split (ATX only today) | 🟡 partial |
 | P5 | index store, search, byte-range retrieval | ⏳ |
 | P6 | MCP server (stdio) | ⏳ |
@@ -32,6 +32,12 @@ moon run cmd/main --target native -- fetch https://docs.moonbitlang.cn/language/
 
 # platform fingerprint only (no network)
 moon run cmd/main --target native -- detect https://github.com/mozilla/readability
+
+# extract main content + metadata (URL or local file)
+moon run cmd/main --target native -- extract fixtures/html/readability-readme.html --out-html out.html
+
+# compare extraction against the Node Readability oracle
+python tools/compare.py
 
 # 10-site smoke run (see docs/p1-smoke.md)
 moon run cmd/main --target native -- smoke fixtures/smoke-urls.txt
@@ -74,6 +80,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
   teardown, algorithm notes, and every source link used.
 - [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D19).
 - [docs/p1-smoke.md](docs/p1-smoke.md) — P1 smoke run against 10 real documentation sites.
+- [docs/p2-extraction.md](docs/p2-extraction.md) — P2 extraction method, metrics and known gaps.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 

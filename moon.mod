@@ -19,4 +19,5 @@ import {
   "moonbitlang/async@0.22.7",
   "tonyfettes/url@0.3.5",
   "gmlewis/sha256@0.18.2",
+  "moonbit-community/html@0.2.3",
 }

@@ -1,1 +1,4 @@
-// Extract stage: will import moonbit-community/html in P2.
+import {
+  "moonbit-community/html",
+  "moonbit-community/html/src" @htmlsrc,
+}

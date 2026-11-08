@@ -10,3 +10,5 @@ node_modules/
 # local index cache produced by the CLI
 .doc-index/
 .doc-index-test/
+
+tools/oracle/out-moonbit/

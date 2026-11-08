@@ -10,6 +10,7 @@ fn usage() -> Unit {
   println("  docmunch fetch <url> [--out PATH] [--allow-private] [--no-cache]")
   println("                       [--max-bytes N] [--timeout MS]")
   println("  docmunch detect <url>")
+  println("  docmunch extract <url|file> [--allow-private] [--out-html PATH]")
   println("  docmunch smoke <url-file>")
 }
 
@@ -34,12 +35,7 @@ fn option_value(args : Array[String], name : String) -> String? {
 }
 
 ///|
-fn summarize(r : @http.FetchResult) -> String {
-  "status=\{r.status} bytes=\{r.bytes_len} platform=\{r.platform.name()} type=\{r.content_type} url=\{r.final_url} cache=\{r.cache_path}"
-}
-
-///|
-async fn cmd_fetch(url : String, args : Array[String]) -> Unit {
+fn fetch_options(args : Array[String]) -> @http.FetchOptions {
   let base = @http.default_fetch_options()
   let max_bytes = match option_value(args, "--max-bytes") {
     Some(v) => @http.parse_int_or(v, base.max_bytes)
@@ -49,7 +45,7 @@ async fn cmd_fetch(url : String, args : Array[String]) -> Unit {
     Some(v) => @http.parse_int_or(v, base.timeout_ms)
     None => base.timeout_ms
   }
-  let opts : @http.FetchOptions = {
+  {
     timeout_ms: timeout,
     max_bytes,
     max_redirects: base.max_redirects,
@@ -59,6 +55,16 @@ async fn cmd_fetch(url : String, args : Array[String]) -> Unit {
     use_cache: !has_flag(args, "--no-cache"),
     cache_root: base.cache_root,
   }
+}
+
+///|
+fn summarize(r : @http.FetchResult) -> String {
+  "status=\{r.status} bytes=\{r.bytes_len} platform=\{r.platform.name()} type=\{r.content_type} url=\{r.final_url} cache=\{r.cache_path}"
+}
+
+///|
+async fn cmd_fetch(url : String, args : Array[String]) -> Unit {
+  let opts = fetch_options(args)
   let result = @http.fetch(url, options=opts) catch {
     e => {
       println("error=\{e.code()} \{e.message()}")
@@ -89,6 +95,49 @@ async fn cmd_detect(url : String) -> Unit {
   println(
     "platform=\{@http.detect_from_url(target).name()} host=\{target.host()}",
   )
+}
+
+///|
+async fn load_document(input : String, args : Array[String]) -> String? {
+  if input.has_prefix("http://") || input.has_prefix("https://") {
+    let result = @http.fetch(input, options=fetch_options(args)) catch {
+      e => {
+        println("error=\{e.code()} \{e.message()}")
+        return None
+      }
+    }
+    Some(result.body)
+  } else {
+    let text = @fs.read_file(input).text() catch {
+      e => {
+        println("error=read \{e.to_string()}")
+        return None
+      }
+    }
+    Some(text)
+  }
+}
+
+///|
+async fn cmd_extract(input : String, args : Array[String]) -> Unit {
+  let source = match load_document(input, args) {
+    Some(html) => html
+    None => return
+  }
+  let ex = @extract.extract(source, input)
+  println(
+    "{\"title\":\{@http.json_escape(ex.title)},\"byline\":\{@http.json_escape(ex.byline)},\"site_name\":\{@http.json_escape(ex.site_name)},\"lang\":\{@http.json_escape(ex.lang)},\"length\":\{ex.length},\"html_len\":\{ex.html.length()},\"text\":\{@http.json_escape(ex.text)}}",
+  )
+  match option_value(args, "--out-html") {
+    Some(path) =>
+      try {
+        @fs.write_file(path, ex.html, create_mode=CreateOrTruncate)
+        println("wrote=\{path}")
+      } catch {
+        e => println("write_error=\{e.to_string()}")
+      }
+    None => ()
+  }
 }
 
 ///|
@@ -146,6 +195,12 @@ async fn main {
       return
     }
     cmd_detect(args[2])
+  } else if cmd == "extract" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_extract(args[2], args)
   } else if cmd == "smoke" {
     if args.length() < 3 {
       usage()

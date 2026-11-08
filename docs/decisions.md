@@ -138,3 +138,32 @@
 - **决策**：HTML marker 按"具体框架 → 托管平台"排序（sphinx 先于 readthedocs）；`*.readthedocs.io` 由域名规则兜底命中 ReadTheDocs。
 - **后果**：Sphinx 站点判为 `sphinx`，RTD 托管站判为 `readthedocs`。
 - **被否**：只留域名规则 —— 自建 Sphinx 站会全部落到 generic。
+---
+
+## D20 — 不建 arena，直接改写 parser 的可变树
+
+- **背景**：预研假设 `moonbit-community/html` 只读；实际它有 `append_child` / `remove_child` / `insert_before`，但 `Node` 构造器包内可见（`Cannot create values of the read-only type`），既不能造节点也不能跨文档克隆。
+- **决策**：放弃自建 arena DOM，改为在 parser 的树上原地清洗、剪枝、unwrap，再 `to_html()` 截取 `<body>`。
+- **后果**：省掉一整层数据拷贝，抽取退化为"删除 + 序列化"；代价是没有节点克隆能力，无法像 Readability 那样把兄弟节点搬进容器。
+- **被否**：写一套自己的 Node 表示再重建树 —— 先把 8,221 条 html5lib 用例的解析结果搬过来，成本远超收益。
+
+## D21 — class/id 负向信号必须整词匹配
+
+- **背景**：Docusaurus 的主包装层带 `__docusaurus_skiptocontent_fallback`，GitHub 的 README 容器叫 `sharedmarkdowncontent__…`；子串匹配 `skip` / `share` 会把整页内容删光。
+- **决策**：把 `class/id/itemprop` 切成小写 token（任意非字母数字为分隔），负向/正向词都做**整词**比较。
+- **后果**：`share-buttons` 仍被删，`sharedmarkdowncontent` 保留；一次修好两个 fixture。
+- **被否**：把 `share`/`skip` 从词表里删掉 —— 治标，下一站还会踩别的词。
+
+## D22 — 容器定位用"祖先链折叠 + unwrap"
+
+- **背景**：最初的做法是"剪掉 `<body>` 里除候选父节点以外的直接子节点"，但候选的父节点往往不是 body 的直接子节点，于是整个内容树（body 唯一子节点）被删掉。
+- **决策**：从容器逐层向上，每层只保留通往容器的那一个孩子，到达 body 后再删旁支，最后把容器之上的包装层 `unwrap` 掉。
+- **后果**：抽取结果就是容器本身，序列化不含整页外壳。
+- **被否**：直接在容器子树内序列化 —— parser 没有提供"序列化任意子树"的 API。
+
+## D23 — 标题清洗的三条规则
+
+- **背景**：真实 `<title>` 常带站点后缀/前缀与 arXiv 的 `[id]` 前缀，Readability 会做清洗。
+- **决策**：① 去掉开头 `[…]`；② 去掉 `| · — –` 分隔的后缀（后缀 ≤40 字符）；③ 若标题以 `{site_name} - ` 开头则去掉前缀。
+- **后果**：三个 fixture 标题全部命中；代价是极少数以 `Site - ` 开头的正文标题会被误剪。
+- **被否**：完全照搬 Readability 的标题候选打分 —— 依赖 h1/站点名多轮比较，收益不足以覆盖复杂度。

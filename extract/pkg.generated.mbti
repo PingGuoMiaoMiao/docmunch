@@ -1,12 +1,57 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "pingguomiaomiao/docmunch/extract"
 
+import {
+  "moonbit-community/html/src",
+}
+
 // Values
+pub fn attr(@src.Document, Int32, String) -> String
+
+pub fn body_id(@src.Document) -> Int32
+
+pub fn body_inner_html(@src.Document) -> String
+
+pub fn class_and_id(@src.Document, Int32) -> String
+
+pub fn clean(@src.Document) -> Unit
+
 pub fn collapse_whitespace(String) -> String
+
+pub fn collect_elements(@src.Document, Int32) -> Array[Int32]
+
+pub fn extract(String, String) -> Extracted
+
+pub fn extract_main(@src.Document) -> Int32
+
+pub fn node_children(@src.Document, Int32) -> Array[Int32]
+
+pub fn node_parent(@src.Document, Int32) -> Int32
+
+pub fn remove_node(@src.Document, Int32) -> Unit
+
+pub fn score_candidates(@src.Document) -> Map[Int32, Double]
+
+pub fn str_contains_pub(String, String) -> Bool
+
+pub fn tag_name(@src.Document, Int32) -> String
+
+pub fn text_lengths(@src.Document, Int32) -> Map[Int32, Int32]
+
+pub fn unwrap_node(@src.Document, Int32) -> Unit
 
 // Errors
 
 // Types and methods
+pub(all) struct Extracted {
+  title : String
+  byline : String
+  site_name : String
+  lang : String
+  text : String
+  html : String
+  length : Int32
+}
 
 // Type aliases
 
