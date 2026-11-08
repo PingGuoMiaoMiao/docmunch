@@ -44,6 +44,22 @@ fn trim_spaces(s : String) -> String {
 }
 
 ///|
+fn strip_leading_bom(s : String) -> String {
+  if s.length() > 0 && s[0].to_int() == 0xFEFF {
+    s[1:s.length()].to_owned()
+  } else {
+    s
+  }
+}
+
+///|
+/// True when the line closes a YAML frontmatter block (`---` or `...`).
+fn is_frontmatter_close(line : String) -> Bool {
+  let t = trim_spaces(line)
+  t == "---" || t == "..."
+}
+
+///|
 /// Parse an ATX heading line (`## Title`). Returns level 0 when not a heading.
 pub fn parse_atx(line : String) -> Heading? {
   let mut level = 0
@@ -199,11 +215,27 @@ pub fn split_document(
   text : String,
 ) -> Array[@core.Section] {
   let lines = split_lines_with_offsets(text)
+  // YAML frontmatter must not be scanned for headings: skip through the first
+  // closing `---`/`...` line, and let the preamble cover the skipped bytes.
+  let mut scan_start = 0
+  let mut has_frontmatter = false
+  if lines.length() > 0 &&
+    trim_spaces(strip_leading_bom(lines[0].text)) == "---" {
+    let mut j = 1
+    while j < lines.length() {
+      if is_frontmatter_close(lines[j].text) {
+        scan_start = j + 1
+        has_frontmatter = true
+        break
+      }
+      j = j + 1
+    }
+  }
   let heads : Array[Heading] = []
   let mut fence = ""
   let mut seen_heading = false
-  let mut preamble_has_content = false
-  let mut i = 0
+  let mut preamble_has_content = has_frontmatter
+  let mut i = scan_start
   while i < lines.length() {
     let line = lines[i]
     let marker = fence_marker(line.text)

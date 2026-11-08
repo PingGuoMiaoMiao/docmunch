@@ -329,6 +329,13 @@ pub fn extract_main(doc : @html.Document) -> Int32 {
   if parent < 0 {
     return root
   }
+  let document_root = doc.document_element
+  // Candidate already sits directly under <body>: nothing to collapse. Without
+  // this guard the collapse loop walks up to the document node, prunes every
+  // body child and then unwraps the document node forever.
+  if parent == root {
+    return root
+  }
   // Keep only article-like siblings inside the parent.
   for child in doc.get_children(parent) {
     let keep = if child == candidate {
@@ -362,7 +369,7 @@ pub fn extract_main(doc : @html.Document) -> Int32 {
   let mut node = parent
   while true {
     let p = doc.get_parent(node)
-    if p < 0 || p == body {
+    if p < 0 || p == body || p == document_root {
       break
     }
     for child in doc.get_children(p) {
@@ -379,7 +386,7 @@ pub fn extract_main(doc : @html.Document) -> Int32 {
   }
   while true {
     let p = doc.get_parent(parent)
-    if p < 0 || p == body {
+    if p < 0 || p == body || p == document_root {
       break
     }
     unwrap_node(doc, p)
@@ -635,8 +642,11 @@ pub fn extract(html : String, url : String) -> Extracted {
     let s = meta_content(doc, "og:site_name")
     if s != "" {
       s
-    } else {
+    } else if url.has_prefix("http://") || url.has_prefix("https://") {
       host_of(url)
+    } else {
+      // Local paths/plain names are not URLs: there is no site to name.
+      ""
     }
   }
   clean(doc)

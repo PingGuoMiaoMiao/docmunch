@@ -41,17 +41,22 @@ fn ascii_words(text : String) -> Array[String] {
 }
 
 ///|
+/// English stopwords for keyword extraction. Package-level and read-only so the
+/// list is built once instead of on every `is_stopword` call.
+let stopwords : Array[String] = [
+  "the", "and", "for", "with", "that", "this", "from", "are", "was", "were", "have",
+  "has", "had", "not", "but", "you", "your", "can", "will", "all", "any", "our",
+  "out", "use", "using", "used", "into", "when", "then", "than", "them", "they",
+  "their", "its", "also", "may", "more", "most", "such", "only", "other", "these",
+  "those", "which", "while", "what", "how", "why", "who", "per", "via", "etc", "one",
+  "two", "see", "new", "get", "set", "over", "under", "about", "there", "here", "where",
+  "been", "being", "does", "did", "done", "each", "both", "after", "before", "between",
+  "through",
+]
+
+///|
 fn is_stopword(w : String) -> Bool {
-  [
-    "the", "and", "for", "with", "that", "this", "from", "are", "was", "were", "have",
-    "has", "had", "not", "but", "you", "your", "can", "will", "all", "any", "our",
-    "out", "use", "using", "used", "into", "when", "then", "than", "them", "they",
-    "their", "its", "also", "may", "more", "most", "such", "only", "other", "these",
-    "those", "which", "while", "what", "how", "why", "who", "per", "via", "etc",
-    "one", "two", "see", "new", "get", "set", "over", "under", "about", "there",
-    "here", "where", "been", "being", "does", "did", "done", "each", "both", "after",
-    "before", "between", "through",
-  ].contains(w)
+  stopwords.contains(w)
 }
 
 ///|

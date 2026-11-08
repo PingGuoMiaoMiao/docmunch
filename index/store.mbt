@@ -1,15 +1,63 @@
 // Index storage: metadata-only JSON + raw document cache.
 //
 // Layout (D8):
-//   <root>/<repo>/index.json           metadata only, no section bodies
-//   <root>/<repo>/raw/<sha256(path)>.bin   exact Markdown bytes the offsets point into
+//   <root>/<repo-key>/index.json           metadata only, no section bodies
+//   <root>/<repo-key>/repo.json            original repo label (read by list_repos)
+//   <root>/<repo-key>/raw/<sha256(path)>.bin   exact Markdown bytes the offsets point into
 //
-// Writes go through a temp file + rename so an interrupted run cannot leave a
-// truncated index behind.
+// `repo_key` maps an arbitrary repo label onto one filesystem-safe directory
+// name. The mapping is injective: names that had to be rewritten carry a short
+// digest suffix, so "a b" and "a_b" never collide. Public path functions accept
+// the original label and apply the key themselves; callers must not sanitize.
+
+///|
+/// Short lowercase hex prefix of a SHA-256 digest, used to disambiguate keys.
+fn sha8(text : String) -> String {
+  let d = @sha256.Digest::new()
+  for b in @utf8.encode(text) {
+    d.write(b)
+  }
+  d.check_sum()[:8].to_owned()
+}
+
+///|
+/// Filesystem-safe directory name for a repo label.
+///
+/// Every character outside `[A-Za-z0-9._-]` becomes `_`. That rewrite is lossy,
+/// so a label that changed gets `-<sha256[0..8]>` appended: `"my repo"` becomes
+/// `"my_repo-<hash>"` and stays distinct from `"my_repo"`. Empty, `"."` and
+/// `".."` are never usable as directory names (and could escape the root), so
+/// they map to `"repo-<sha256[0..8]>"`.
+pub fn repo_key(repo : String) -> String {
+  if repo == "" || repo == "." || repo == ".." {
+    return "repo-" + sha8(repo)
+  }
+  let sb = StringBuilder::StringBuilder()
+  for c in repo {
+    let n = c.to_int()
+    let ok = (n >= 97 && n <= 122) ||
+      (n >= 65 && n <= 90) ||
+      (n >= 48 && n <= 57) ||
+      c == '-' ||
+      c == '_' ||
+      c == '.'
+    if ok {
+      sb.write_char(c)
+    } else {
+      sb.write_char('_')
+    }
+  }
+  let sanitized = sb.to_string()
+  if sanitized == repo {
+    sanitized
+  } else {
+    sanitized + "-" + sha8(repo)
+  }
+}
 
 ///|
 pub fn repo_dir(root : String, repo : String) -> String {
-  root + "/" + repo
+  root + "/" + repo_key(repo)
 }
 
 ///|
@@ -32,28 +80,31 @@ pub fn raw_file_path(root : String, repo : String, doc_path : String) -> String 
 }
 
 ///|
-fn sanitize_repo(repo : String) -> String {
-  let sb = StringBuilder::StringBuilder()
-  for c in repo {
-    let n = c.to_int()
-    let ok = (n >= 97 && n <= 122) ||
-      (n >= 65 && n <= 90) ||
-      (n >= 48 && n <= 57) ||
-      c == '-' ||
-      c == '_' ||
-      c == '.'
-    if ok {
-      sb.write_char(c)
-    } else {
-      sb.write_char('_')
-    }
+fn repo_meta_path(root : String, repo : String) -> String {
+  repo_dir(root, repo) + "/repo.json"
+}
+
+///|
+/// Shape of `<repo-dir>/repo.json`: the label the user originally supplied.
+priv struct RepoMeta {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
+/// Original label stored in `repo.json`, or `None` for pre-repo.json indexes.
+async fn read_repo_name(path : String) -> String? {
+  if !@fs.exists(path) {
+    return None
   }
-  sb.to_string()
+  let text = @fs.read_file(path).text() catch { _ => return None }
+  let parsed = @json.parse(text) catch { _ => return None }
+  let meta : RepoMeta = @json.from_json(parsed) catch { _ => return None }
+  Some(meta.name)
 }
 
 ///|
 pub async fn load_index(root : String, repo : String) -> @core.DocIndex? {
-  let path = index_file_path(root, sanitize_repo(repo))
+  let path = index_file_path(root, repo)
   if not(@fs.exists(path)) {
     return None
   }
@@ -76,14 +127,20 @@ pub async fn save_index(
   repo : String,
   index : @core.DocIndex,
 ) -> Unit {
-  let name = sanitize_repo(repo)
-  let dir = repo_dir(root, name)
+  let dir = repo_dir(root, repo)
   @fs.mkdir(dir, recursive=true, allow_exist=true)
   let json = @json.to_json(index).stringify(indent=2)
-  let path = index_file_path(root, name)
+  let path = index_file_path(root, repo)
   let tmp = path + ".tmp"
   @fs.write_file(tmp, json, create_mode=CreateOrTruncate)
   @fs.rename(tmp, path, replace=true)
+  // The directory name is a lossy key; remember the label the user gave us.
+  let meta : RepoMeta = { name: repo, }
+  @fs.write_file(
+    repo_meta_path(root, repo),
+    @json.to_json(meta).stringify(),
+    create_mode=CreateOrTruncate,
+  )
 }
 
 ///|
@@ -93,18 +150,27 @@ pub async fn write_raw(
   doc_path : String,
   text : String,
 ) -> Unit {
-  let name = sanitize_repo(repo)
-  let dir = raw_dir(root, name)
+  let dir = raw_dir(root, repo)
   @fs.mkdir(dir, recursive=true, allow_exist=true)
-  let path = raw_file_path(root, name, doc_path)
+  let path = raw_file_path(root, repo, doc_path)
   let tmp = path + ".tmp"
   @fs.write_file(tmp, text, create_mode=CreateOrTruncate)
   @fs.rename(tmp, path, replace=true)
 }
 
 ///|
+/// Delete a repo's index, raw cache, and metadata. A missing directory is a
+/// no-op, so deleting an unindexed repo is idempotent.
+pub async fn delete_repo(root : String, repo : String) -> Unit {
+  let dir = repo_dir(root, repo)
+  if @fs.exists(dir) {
+    @fs.rmdir(dir, recursive=true)
+  }
+}
+
+///|
 pub async fn list_repos(root : String) -> Array[String] {
-  if not(@fs.exists(root)) {
+  if !@fs.exists(root) {
     return []
   }
   let entries = @fs.readdir(root, sort=true)
@@ -112,7 +178,12 @@ pub async fn list_repos(root : String) -> Array[String] {
   for name in entries {
     let candidate = root + "/" + name + "/index.json"
     if @fs.exists(candidate) {
-      out.push(name)
+      // Older indexes have no repo.json; the directory name is all we have.
+      let display = match read_repo_name(root + "/" + name + "/repo.json") {
+        Some(original) => original
+        None => name
+      }
+      out.push(display)
     }
   }
   out
@@ -126,7 +197,7 @@ pub async fn read_section_text(
   doc_path : String,
   section : @core.Section,
 ) -> String {
-  let path = raw_file_path(root, sanitize_repo(repo), doc_path)
+  let path = raw_file_path(root, repo, doc_path)
   let file = @fs.open(path, mode=ReadOnly)
   defer file.close()
   let len = section.byte_end - section.byte_start

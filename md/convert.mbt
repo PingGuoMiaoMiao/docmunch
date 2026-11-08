@@ -449,20 +449,64 @@ fn absolutize(doc : @html.Document, base_url : String) -> Unit {
 }
 
 ///|
-/// Collapse runs of 3+ newlines into exactly two, trim the ends.
+/// Fence marker (` ``` ` or `~~~`) when the line opens/closes a fenced block.
+fn line_fence_marker(line : String) -> String {
+  let t = line.trim().to_owned()
+  if t.has_prefix("```") {
+    "```"
+  } else if t.has_prefix("~~~") {
+    "~~~"
+  } else {
+    ""
+  }
+}
+
+///|
+/// Collapse consecutive blank lines outside fenced code blocks. Blank lines
+/// inside a fence are content and stay verbatim; outside, a run of blank lines
+/// becomes one. The result ends with exactly one newline (or is empty).
 fn squash_blank_lines(s : String) -> String {
-  let sb = StringBuilder::StringBuilder()
-  let mut newlines = 0
-  for c in s {
-    if c == '\n' {
-      newlines = newlines + 1
-      if newlines <= 2 {
-        sb.write_char(c)
+  let out : Array[String] = []
+  let mut fence = ""
+  let mut pending_blanks = 0
+  for line in split_lines_local(s) {
+    let marker = line_fence_marker(line)
+    if fence != "" {
+      // Inside a fence every line, including blank ones, is preserved.
+      out.push(line)
+      if marker == fence {
+        fence = ""
       }
-    } else {
-      newlines = 0
-      sb.write_char(c)
+      continue
     }
+    if marker != "" {
+      if pending_blanks > 0 && out.length() > 0 {
+        out.push("")
+      }
+      pending_blanks = 0
+      out.push(line)
+      fence = marker
+      continue
+    }
+    if line.trim() == "" {
+      pending_blanks = pending_blanks + 1
+    } else {
+      if pending_blanks > 0 && out.length() > 0 {
+        out.push("")
+      }
+      pending_blanks = 0
+      out.push(line)
+    }
+  }
+  if out.length() == 0 {
+    return ""
+  }
+  let sb = StringBuilder::StringBuilder()
+  for i = 0; i < out.length(); i = i + 1 {
+    if i > 0 {
+      sb.write_char('\n')
+    }
+    sb.write_string(out[i])
   }
   let trimmed = sb.to_string().trim().to_owned()
   if trimmed == "" {

@@ -15,6 +15,8 @@ pub(all) struct FetchOptions {
   accept : String
   use_cache : Bool
   cache_root : String
+  cache_ttl_ms : Int64
+  max_retries : Int32
 }
 
 ///|
@@ -28,6 +30,8 @@ pub fn default_fetch_options() -> FetchOptions {
     accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.1",
     use_cache: true,
     cache_root: ".doc-index",
+    cache_ttl_ms: 86_400_000,
+    max_retries: 2,
   }
 }
 
@@ -42,6 +46,7 @@ pub(all) struct FetchResult {
   charset_warning : Bool
   platform : Platform
   cache_path : String
+  from_cache : Bool
 }
 
 ///|
@@ -170,12 +175,90 @@ async fn fetch_hop(
     charset_warning: declares_non_utf8(body),
     platform,
     cache_path,
+    from_cache: false,
+  }
+}
+
+///|
+/// Build the result straight from a readable cache entry, or `None` when the
+/// cache is off, has nothing fresh enough, or the entry is bigger than the
+/// caller's current `max_bytes` (an entry may have been written under a larger
+/// cap, and a cache hit must not bypass the limit).
+///
+/// `platform` and `charset_warning` are recomputed from the body instead of being
+/// taken from the metadata: they are pure functions of the bytes, and recomputing
+/// keeps a cache hit indistinguishable from the network result it stands in for.
+/// One field cannot be recovered that way: `final_url` reports the requested URL,
+/// because a cache hit does not replay the redirect chain (the metadata does keep
+/// the real one for later use).
+async fn fetch_from_cache(target : Target, opts : FetchOptions) -> FetchResult? {
+  if !opts.use_cache {
+    return None
+  }
+  let requested = target.href()
+  let key = cache_key(requested)
+  let entry = load_cached(opts.cache_root, key, opts.cache_ttl_ms) catch {
+    _ => None
+  }
+  match entry {
+    None => None
+    Some(e) =>
+      if e.body.length() > opts.max_bytes {
+        None
+      } else {
+        let body = @utf8.decode_lossy(e.body)
+        Some({
+          requested_url: requested,
+          final_url: requested,
+          status: parse_int_or(e.status, 200),
+          content_type: e.content_type,
+          bytes_len: e.body.length(),
+          body,
+          charset_warning: declares_non_utf8(body),
+          platform: detect(target, body),
+          cache_path: cache_bin_path(opts.cache_root, key),
+          from_cache: true,
+        })
+      }
+  }
+}
+
+///|
+/// Run the network path, retrying only retryable failures (see `is_retryable`)
+/// with a linear backoff of `200ms * attempt`. `attempt` is the number of retries
+/// already spent, so `max_retries = 0` (or less) means one try and no retry. The
+/// caller keeps this inside `with_timeout`, so backoff time is counted against
+/// the deadline rather than extending it.
+async fn fetch_network(
+  target : Target,
+  requested : String,
+  attempt : Int32,
+  opts : FetchOptions,
+) -> FetchResult raise FetchError {
+  let outcome : Result[FetchResult, FetchError] = Ok(
+    fetch_hop(target, requested, 0, opts),
+  ) catch {
+    e => Err(e)
+  }
+  match outcome {
+    Ok(r) => r
+    Err(e) =>
+      if attempt < opts.max_retries && is_retryable(e) {
+        @async.sleep(200 * (attempt + 1))
+        fetch_network(target, requested, attempt + 1, opts)
+      } else {
+        raise e
+      }
   }
 }
 
 ///|
 /// Fetch one URL. Never raises for 4xx/5xx: those are returned as a result so the
 /// caller decides (an MCP tool should report "404" rather than crash).
+///
+/// With `use_cache` on, a fresh cache entry is returned without touching the
+/// network (`from_cache = true`); otherwise the network path runs, retries, and
+/// rewrites the cache.
 pub async fn fetch(
   url : String,
   options? : FetchOptions,
@@ -185,8 +268,13 @@ pub async fn fetch(
     None => default_fetch_options()
   }
   let target = Target::parse(url)
+  let requested = target.href()
   @async.with_timeout(opts.timeout_ms, async fn() {
-    fetch_hop(target, target.href(), 0, opts)
+    let cached = fetch_from_cache(target, opts)
+    match cached {
+      Some(r) => r
+      None => fetch_network(target, requested, 0, opts)
+    }
   }) catch {
     @async.TimeoutError => raise Timeout
     FetchError::_ as e => raise e

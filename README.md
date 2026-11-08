@@ -22,6 +22,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P6 | MCP server (stdio, 8 tools) | ✅ done |
 | P7 | link-density pruning, CI, benchmark, delivery docs | ✅ done |
 | P8 | body-aware search (section keywords), MCP HTTP transport | ✅ done |
+| P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr | ✅ done |
 
 ## Quick start
 
@@ -50,6 +51,8 @@ python tools/toc_check.py
 moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
 moon run cmd/main --target native -- search local readability
 moon run cmd/main --target native -- section local "<id from search>" --verify
+moon run cmd/main --target native -- repos
+moon run cmd/main --target native -- delete local
 
 # MCP server: stdio (default) or Streamable HTTP
 python tools/mcp_e2e.py
@@ -63,7 +66,11 @@ python tools/compare.py
 moon run cmd/main --target native -- smoke fixtures/smoke-urls.txt
 ```
 
-`fetch` flags: `--out PATH`, `--allow-private`, `--no-cache`, `--max-bytes N`, `--timeout MS`.
+`fetch` flags: `--out PATH`, `--allow-private`, `--no-cache`, `--max-bytes N`,
+`--timeout MS`, `--cache-ttl MS` (default 24h), `--retries N` (default 2).
+`get_section` / `get_section_context` accept `max_bytes` (default 8000; `0` or
+`-1` means no cap) and report `truncated` + `total_bytes`, so a client can ask
+for more when a section was cut.
 
 Security default: loopback/RFC1918/link-local targets are refused unless
 `--allow-private` is passed (the MCP server runs on the user's machine).
@@ -73,7 +80,7 @@ Security default: loopback/RFC1918/link-local targets are refused unless
 ```
 core/      shared model: Section, DocIndex, slug + id rules, UTF-8 byte length
 section/   heading-based splitting, byte offsets, hierarchy
-http/      fetch stage (SSRF guard lands first, transport in P1)
+http/      fetch stage: SSRF guard, raw cache (TTL/retry), doc_path rules
 extract/   mutable DOM arena + Readability-compatible scorer (P2)
 md/        HTML -> CommonMark normalization (P3)
 index/     JSON index + raw cache, atomic writes, version gating (P5)
@@ -87,6 +94,8 @@ docs/      pre-research, decision records, competition notes
 ## Design contracts (short version)
 
 - Section id: `{repo}::{doc_path}::{hierarchical_slug}#{level}`.
+- `doc_path` is the URL pathname (plus a short hash when the URL has a query or
+  fragment) or a `\`-normalized local path; CLI and MCP share the same rules.
 - Byte offsets are **UTF-8 bytes**, not code units, so retrieval is
   `seek(byte_start)` + `read(byte_end - byte_start)`.
 - Index holds metadata only; bodies live in the raw cache.
@@ -98,13 +107,15 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 
 - [docs/pre-research.md](docs/pre-research.md) — ecosystem survey, reference-implementation
   teardown, algorithm notes, and every source link used.
-- [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D19).
+- [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D41).
 - [docs/p1-smoke.md](docs/p1-smoke.md) — P1 smoke run against 10 real documentation sites.
 - [docs/p2-extraction.md](docs/p2-extraction.md) — P2 extraction method, metrics and known gaps.
 - [docs/p3-markdown.md](docs/p3-markdown.md) — P3 HTML→CommonMark rules, validation and known gaps.
 - [docs/p4-sectioning.md](docs/p4-sectioning.md) — P4 section contract, byte-level checks and gaps.
 - [docs/p5-index.md](docs/p5-index.md) — P5 storage layout, search scoring and retrieval.
 - [docs/p6-mcp.md](docs/p6-mcp.md) — P6 MCP tool surface, protocol notes and e2e evidence.
+- [docs/p7-delivery.md](docs/p7-delivery.md) — P7 delivery metrics, audit fixes and known gaps.
+- [docs/p8-enhancements.md](docs/p8-enhancements.md) — P8 body-aware search and MCP HTTP transport.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 

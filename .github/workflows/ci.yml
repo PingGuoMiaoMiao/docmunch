@@ -32,6 +32,15 @@ jobs:
       - name: Build native binary
         run: moon build --target native
 
+      - name: Extraction oracle comparison
+        run: |
+          mkdir -p tools/oracle/out-moonbit
+          for f in fixtures/html/*.html; do
+            name=$(basename "$f" .html)
+            moon run cmd/main --target native -- extract "$f" > "tools/oracle/out-moonbit/$name.json"
+          done
+          python tools/compare.py
+
       - name: Markdown goldens
         run: python tools/markdown_golden.py
 

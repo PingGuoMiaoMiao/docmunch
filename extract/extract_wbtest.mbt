@@ -55,8 +55,37 @@ test "title cleanup drops separators and id prefixes" {
 }
 
 ///|
+test "local path input has no site name" {
+  let page = "<html><body><p>body text long enough to keep, with commas.</p></body></html>"
+  assert_eq(extract(page, "docs/page.html").site_name, "")
+  assert_eq(extract(page, "D:\\docs\\page.html").site_name, "")
+  assert_eq(extract(page, "https://example.com/x").site_name, "example.com")
+}
+
+///|
 test "empty body does not panic" {
   let ex = extract("<html><body></body></html>", "https://example.com/")
   assert_eq(ex.length, 0)
   assert_eq(ex.text, "")
+}
+
+///|
+test "shallow article directly under body terminates" {
+  // Regression: the candidate container was already a child of <body>, the
+  // collapse loop walked to the document node and then unwrapped it forever.
+  let ex = extract(
+    "<html><body><article><h1>Title</h1><p>This is a long enough paragraph, with commas, to score as content.</p></article></body></html>",
+    "https://example.com/x",
+  )
+  assert_true(ex.text.contains("long enough paragraph"))
+  assert_eq(ex.title, "Title")
+}
+
+///|
+test "body-level paragraph candidate terminates" {
+  let ex = extract(
+    "<html><body><p>Only one paragraph here, still with commas, long enough to score.</p></body></html>",
+    "https://example.com/y",
+  )
+  assert_true(ex.text.contains("Only one paragraph"))
 }

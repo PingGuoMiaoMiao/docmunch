@@ -1,6 +1,7 @@
 import {
-  "colmugx/mcp",
+  "colmugx/mcp" @mcpsdk,
   "moonbitlang/core/json",
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/async/fs",
   "pingguomiaomiao/docmunch/core",
   "pingguomiaomiao/docmunch/http",

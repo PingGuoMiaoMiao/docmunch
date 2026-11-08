@@ -264,3 +264,61 @@
 - **决策**：`--http` 模式下客户端必须发送 `MCP-Protocol-Version`、`Mcp-Method`，`tools/call` 还要 `Mcp-Name`（= `params.name`）；e2e 脚本按此实现。
 - **后果**：HTTP 端点可直接被标准 MCP 客户端使用；手写客户端需要照抄这三条头。
 - **被否**：在服务端放宽校验 —— 会破坏规范一致性，也让"客户端无状态"的设计退化。
+
+---
+
+## D37 — repo 目录身份：可读 key + `repo.json` 还原
+
+- **背景**：早期把 repo 名直接拼进 `<root>/<repo>`，store 把 `[A-Za-z0-9._-]` 之外的字符都换成 `_`：`"a b"` 与 `"a_b"` 会落到同一目录；CLI 与 MCP 各写一套 sanitize（MCP 的 `delete` 只替换 `/`）；`delete` 由调用方自己拼路径，带空格/斜杠的名字要么删不掉、要么删错目录。
+- **决策**：
+  - 单一入口 `repo_key(repo)`：`[A-Za-z0-9._-]` 之外的字符变 `_`；若发生改写，追加 `-<sha256(原名)[0:8]>` 保证单射；空、`.`、`..` 这类非法目录名映射为 `repo-<sha8>`。
+  - `repo_dir` / `index_file_path` / `raw_dir` / `raw_file_path` 全部接收**原始 label**，内部调用 `repo_key`；调用方不再自行 sanitize。
+  - `save_index` 在 repo 目录写 `repo.json`（`{"name":"<原始名>"}`）；`list_repos` 优先读它，缺失或损坏时回退目录名，兼容旧索引。
+  - `delete_repo(root, repo)` 成为独立 API，目录不存在时静默成功（幂等）。
+- **后果**：空格、中文等名字可安全往返；`"a b"` 与 `"a_b"` 永不合并；目录名可能带哈希后缀，`ls` 可读性下降，但 `repo.json` 能还原原始 label。旧版无 `repo.json` 的目录仍会按目录名列出（删除时也传该目录名）。
+- **被否**：URL 编码/双下划线转义（仍有长度、大小写与保留名问题，且要 decode 才能还原）；只 sanitize 不哈希（碰撞不可检测）；维护一份全局 repo 注册表（并发写入与原子性更复杂）。
+
+## D38 — `doc_path` 规则：URL 全路径 + query 哈希，本地路径统一归一
+
+- **背景**：旧实现取 URL 最后一段，`https://host/a/index.html` 与 `https://host/b/index.html` 都变成 `index.html`，后索引的文档覆盖前一个；`toc` 直接用原始路径（Windows 下含 `\`），与 `index`/`search` 得到的 section id 不一致。
+- **决策**：
+  - `doc_path_for_url(url)`：取 URL pathname，去掉首尾 `/`；为空时用 `index`；无 query/fragment 时追加 `.md`；有 query/fragment 时追加 `-<sha256(完整URL)[0:8]>.md`；解析失败回退 `index.md`，保证不会写出 repo 目录。
+  - `normalize_local_path(path)`：`\` → `/`，去掉重复前导 `./`，折叠连续 `/`，保留前导 `/`（绝对路径仍是绝对路径）。
+  - CLI 与 MCP 的 `index` / `toc` / `index_local` 全部走这两个函数，不再各自实现。
+- **后果**：同 host 不同路径不再互相覆盖；同路径不同 query 的页面也能区分；`/README.md` 会得到 `README.md.md`（规则恒定追加），同一 URL 的不同拼写会得到不同文件名。section id 在 CLI、MCP、`toc` 之间一致。
+- **被否**：只取 pathname（query 页面仍碰撞）；把 URL 编码后的完整路径当 `doc_path`（索引里不可读，仍要处理 `..` 与长度）；直接使用完整 URL（`:`、`?` 等字符对文件系统不友好）。
+
+## D39 — MCP 响应 `max_bytes` 截断
+
+- **背景**：`get_section` / `get_section_context` 返回整节 Markdown，长文档的一节可达数百 KB，直接塞进模型上下文会挤爆；客户端也无法预知响应大小。
+- **决策**：两个工具 schema 新增 `max_bytes`（integer，默认 8000，`0`/`-1` 表示不截断）；Markdown 经 `truncate_utf8` 按 UTF-8 码点边界截断；响应新增 `truncated: Bool` 与 `total_bytes: Int32`（截断前 UTF-8 字节数）；`verified` 仍按截断前的完整 section 计算。
+- **后果**：默认响应有上限，客户端可按需调大；截断不会劈开多字节字符；客户端可据 `truncated`/`total_bytes` 决定是否用更大 `max_bytes` 重取（v1 没有 offset 分页）。旧客户端忽略新字段不受影响。
+- **被否**：服务端固定 8KB 硬截断（无法取全文）；按字符/字节硬切（可能产生无效 UTF-8）；响应分页（需要 cursor 状态，v1 复杂度不划算）。
+
+## D40 — fetch 缓存 TTL + 可读缓存 + 有限重试
+
+- **背景**：P1 只写 `.bin` + `.meta`，命中时无法还原 status/content_type；每次 fetch 都重新触网；瞬时网络错误直接失败；TTL 若用 `@async.now()`（单调时钟）对比文件 mtime（epoch）会永远失配。
+- **决策**：
+  - `FetchOptions += cache_ttl_ms`（默认 86,400,000 = 24h）与 `max_retries`（默认 2）；CLI 新增 `--cache-ttl MS`、`--retries N`。
+  - `load_cached(root, key, ttl_ms)` 返回 `CachedEntry{body, status, content_type}`；TTL 用 `@env.now()`（epoch）对比 `.bin` 的 mtime；`ttl_ms <= 0` 表示永不新鲜（只写不读）；meta 缺字段回退 `200`/`""`，无 meta 视为未命中；损坏条目抛 `CacheError`，fetch 侧按未命中处理。
+  - 缓存命中时 `platform` / `charset_warning` 由 body 重算，`from_cache = true`；命中仍受当前 `max_bytes` 限制，条目过大按未命中走网络。
+  - 只有 `NetworkError` 可重试（`is_retryable`），线性退避 `200ms * attempt`；整个重试预算仍在 `with_timeout` 内。
+- **后果**：重复 fetch 不再触网，瞬时抖动可自愈；TTL 以文件系统时钟为准，跨进程/重启有效。已知限制：命中时不重放重定向链，`final_url` 报告请求 URL（meta 仍保存真实值）；缓存命中同样返回 4xx/5xx，与网络路径语义一致。
+- **被否**：不读缓存（重复抓取慢且对站点不友好）；用进程内 `now()` 做 TTL（跨进程失效且与 mtime 不可比）；对所有错误重试（超时/策略拒绝重试只会翻倍延迟）。
+
+## D41 — frontmatter 跳过与围栏感知的空白压缩
+
+- **背景**：YAML frontmatter 里 `key: value` 行的下一行就是 closing `---`，setext 规则把它误判成 H2，frontmatter 内容泄漏成一节；Markdown 转换的全局空白压缩会把 `<pre>`/围栏代码块里的连续空行压掉，破坏代码可读性与黄金文件。
+- **决策**：
+  - `split_document`：首行（允许 U+FEFF 前缀，trim 后）为 `---` 时，向下找第一个 trim 后为 `---` 或 `...` 的行作为结束；标题扫描从下一行开始，跳过的字节归入 preamble；未闭合则退回普通文本（`scan_start = 0`）。
+  - `squash_blank_lines` 改为行级：跟踪 ``` / ~~~ 围栏，围栏内逐行原样保留（含连续空行），围栏外连续空行压到最多 1 个；末尾保证单个 `\n`。
+- **后果**：frontmatter 不再产出假标题，preamble + 正文的 `byte_start`/`byte_end` 仍连续覆盖全文；代码块内容保真（行级处理会把 CRLF 归一为 LF，与生成器输出一致）。以 `---` 开头且存在闭合行的普通文档会被当 frontmatter 跳过，属于可接受的语义变化。
+- **被否**：引入完整 YAML 解析器（只为找块边界，依赖过重）；只跳过第一行（多行 frontmatter 仍泄漏）；用正则替换压空行（嵌套围栏与 `~~~` 容易误伤）。
+---
+
+## D42 — `extract_main` 必须显式处理"候选容器直接挂在 body 下"
+
+- **背景**：docs-verifier 在 T5 手工复核时发现，`<body><article><h1>…</h1><p>≥25 字符</p></article></body>` 这类极简页面会让 `extract` / `markdown` 死循环（CPU 100%）。根因：候选的父节点就是 body 时，折叠循环向上走到 document 节点、删光 body 子节点，随后 unwrap 循环对 document 节点反复调用 `unwrap_node`（它是 no-op），永不终止。
+- **决策**：① 候选父节点 == body 时直接返回 body（无需折叠）；② 折叠循环与 unwrap 循环都以 `document_root` 为终止边界；③ 补两条回归测试（浅层 article、body 级单段落）。
+- **后果**：极简 HTML 立即返回；fixtures 与既有行为不变（全部 72 个测试通过）。
+- **被否**：给循环加迭代上限 —— 只是把死循环变成静默截断，没消除根因。

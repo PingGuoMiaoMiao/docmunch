@@ -24,6 +24,19 @@ test "code block keeps whitespace and language" {
 }
 
 ///|
+test "blank lines inside fenced code blocks are preserved" {
+  let md = html_to_markdown("<pre>line1\n\n\nline2</pre>")
+  assert_true(md.contains("line1\n\n\nline2"))
+  assert_eq(md, "```\nline1\n\n\nline2\n```\n")
+}
+
+///|
+test "squash keeps tilde-fenced blocks and collapses outside blanks" {
+  assert_eq(squash_blank_lines("~~~\na\n\n\nb\n~~~\n"), "~~~\na\n\n\nb\n~~~\n")
+  assert_eq(squash_blank_lines("a\n\n\n\nb\n"), "a\n\nb\n")
+}
+
+///|
 test "table becomes a pipe table" {
   let md = html_to_markdown(
     "<table><tr><th>Name</th><th>Type</th></tr><tr><td>a</td><td>int</td></tr></table>",

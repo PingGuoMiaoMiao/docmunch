@@ -11,5 +11,15 @@ node_modules/
 .doc-index/
 .doc-index-test/
 .doc-index-mcp/
+.doc-index-mcp-http/
+
+# benchmark scratch root (tools/bench.py)
+.bench-index/
+
+# local audit / verification scratch space
+.audit/
 
 tools/oracle/out-moonbit/
+
+# AgentTeams staging area
+.agent-teams/

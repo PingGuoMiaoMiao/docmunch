@@ -2,20 +2,21 @@
 
 - 时间：2026-11-08
 - 目标：把 P0–P6 的成果做成可复现、可评审、可继续演进的开源项目
-- 结论：**49 个单测 + 4 套外部校验全部通过；6 条赛事验收标准逐条有证据**
+- 结论：**70 个单测 + 6 套外部校验全部通过；6 条赛事验收标准逐条有证据**
 
 ## 1. 总指标
 
 | 指标 | 结果 | 验证方式 |
 | --- | --- | --- |
-| 单元/集成测试 | **49/49 通过** | `moon test` |
+| 单元/集成测试 | **70/70 通过** | `moon test` |
 | 抽取：标题匹配 | **4/4** | `python tools/compare.py` |
 | 抽取：平均长度比 / Jaccard | **1.03 / 0.91** | 同上 |
 | Markdown 黄金文件 | **4/4 无漂移** | `python tools/markdown_golden.py` |
 | 分节字节契约 | **4/4 通过** | `python tools/toc_check.py` |
-| MCP 端到端 | **10/10 断言** | `python tools/mcp_e2e.py` |
-| 索引耗时（单文档） | 54–182 ms | `python tools/bench.py` |
-| 检索 / 取回（含进程启动） | 19.7 / 19.5 ms（基线 20.1 ms） | 同上 |
+| MCP 端到端（stdio） | **10/10 断言** | `python tools/mcp_e2e.py` |
+| MCP 端到端（HTTP） | **6/6 断言** | `python tools/mcp_http_e2e.py` |
+| 索引耗时（单文档） | 42–148 ms | `python tools/bench.py` |
+| 检索 / 取回（含进程启动） | 18.9 / 19.1 ms（基线 19.6 ms） | 同上 |
 
 > 检索与取回的"实际计算"在毫秒以下——中位数与 `repos` 空命令的基线持平，CLI 成本主要是进程启动。MCP 常驻进程下这两条路径是纯内存 + 一次 `read_at`。
 
@@ -24,21 +25,21 @@
 | 验收项 | 本项目对应证据 |
 | --- | --- |
 | MoonBit 为主实现语言 | 全部源码为 `.mbt`（8 个包）；仅有 Python/Node 的**测试与校验脚本**，不参与运行时 |
-| 仓库公开、提交可追踪 | 7 次语义化提交，每个阶段一份设计文档 + ADR |
+| 仓库公开、提交可追踪 | 12 次语义化提交，每个阶段一份设计文档 + ADR |
 | 能够运行（README/示例/测试） | `moon build` + `moon test` 一条命令；README 列出全部 CLI 子命令 |
 | 工作有效（本期实质新增） | 从空目录到可用的 fetch→extract→markdown→section→index→MCP 全链路 |
 | 开源合规 | Apache-2.0（`LICENSE`）；第三方依赖逐个记录在 `moon.mod`，fixtures 来源在 `fixtures/README.md` 标注 |
-| AI 可解释 | `docs/` 下 6 份阶段文档 + 34 条 ADR（含被否方案），记录每次取舍与踩坑 |
+| AI 可解释 | `docs/` 下 8 份阶段文档 + 41 条 ADR（D1–D41，含被否方案），记录每次取舍与踩坑 |
 
 ## 3. 交付物清单
 
 ```
 core/  section/  index/  mcp/  http/  extract/  md/  cmd/main/   # 8 个 MoonBit 包
 docs/pre-research.md  decisions.md  p1-smoke.md  p2-extraction.md
-docs/p3-markdown.md   p4-sectioning.md  p5-index.md  p6-mcp.md  p7-delivery.md
+docs/p3-markdown.md   p4-sectioning.md  p5-index.md  p6-mcp.md  p7-delivery.md  p8-enhancements.md
 fixtures/html/*.html（4 个真实页面快照）
 fixtures/markdown/*.md（4 份黄金文件）
-tools/compare.py  markdown_golden.py  toc_check.py  mcp_e2e.py  bench.py
+tools/compare.py  markdown_golden.py  toc_check.py  mcp_e2e.py  mcp_http_e2e.py  bench.py
 tools/oracle/（Node 版 Readability 期望值，仅测试期使用）
 .github/workflows/ci.yml
 ```
@@ -61,25 +62,55 @@ moon run cmd/main --target native -- section docs.moonbitlang.cn "<id>" --verify
 moon run cmd/main --target native -- mcp
 ```
 
-## 5. 已知差距（诚实的部分）
+## 5. 本轮修复（2026-11-08 审计）
+
+这轮把审计发现的 P0/P1 问题修在源码里，并补了回归测试；取舍与拒绝的方案见 D37–D41。
+
+| 修复 | 之前 | 现在 |
+| --- | --- | --- |
+| repo 目录身份 / delete | 只把 `/` 换成 `_`，`"a b"` 与 `"a_b"` 共用目录；delete 由调用方拼路径 | `repo_key` 单射映射 + `repo.json` 保存原始 label；`delete_repo` 幂等（D37） |
+| URL doc_path 覆盖 | 只取 URL 最后一段，同 host 的 `a/index.html` 与 `b/index.html` 互相覆盖 | 全 pathname + query/fragment 哈希，`a/index.html.md` 与 `b/index.html.md` 共存（D38） |
+| toc 与 index 路径不一致 | `toc` 保留 `\`，与 `index`/`search` 的 section id 不同 | 两处共用 `normalize_local_path`，id 逐字节一致（D38） |
+| MCP 响应无上限 | `get_section*` 直接返回整节 | `max_bytes`（默认 8000，0/-1 不截断）+ `truncated` / `total_bytes`（D39） |
+| fetch 缓存不可读、无重试 | 只写缓存；网络错误直接失败 | `load_cached` 还原 status/type、epoch TTL、仅 `NetworkError` 重试（D40） |
+| frontmatter 假标题 | closing `---` 被 setext 规则误判，frontmatter 内容成一节 | 识别并跳过 YAML frontmatter，字节归入 preamble（D41） |
+| 代码块空行被压缩 | 全局压空行，代码块内连续空行丢失 | 围栏感知：围栏内逐行保留，围栏外最多 1 个空行（D41） |
+| 极简 HTML 抽取死循环 | 候选容器直接挂 body 时，折叠/unwrap 循环对 document 节点空转 | 父节点为 body 时直接返回，两个循环都以 document 根为边界（D42） |
+| stderr / stdout 混用 | 错误与正常结果都走 stdout | 诊断走 `fail()` → stderr，stdout 只留数据 |
+| 编译与测试卫生 | MCP SDK 与本地包同名告警；fetch 测试端口写死 | SDK 别名 `@mcpsdk`；fetch 测试改用动态端口 |
+
+验证：`moon check --target native` 0 errors（15 条存量 warning）、`moon test` 70/70、`moon build --target native` 成功；6 套外部校验全绿（compare 4/4、markdown_golden 4/4、toc_check 4/4、mcp_e2e 10/10、mcp_http_e2e 6/6、bench 正常出数）。
+
+## 6. 已知差距（诚实的部分）
 
 | 差距 | 现状 | 影响 |
 | --- | --- | --- |
+| DNS rebinding | SSRF 校验只检查解析出的目标 IP；域名可在校验后重新指向内网 | 本机 MCP 场景需信任被索引站点；彻底修复要把解析结果 pin 到连接 |
+| 非 UTF-8 文档 | 只按 UTF-8 解码；声明非 UTF-8 时 `charset_warning=true`，正文可能乱码 | 中文 GBK / Shift_JIS 站点抽取质量下降 |
+| derive 警告 | `core/types.mbt` 的 `derive(ToJson, FromJson)` 触发 3 处 `implicit_impl_as_method` 编译器警告 | 仅告警，不影响 JSON 往返；编译器升级前需改显式 `extend` |
+| HTTP 并发 | Streamable HTTP 单进程处理请求，跨请求没有 repo 级写锁；MCP 服务端内工具调用串行 | 并发写同一 repo 可能互相覆盖；单用户本机场景可接受 |
+| 无认证 | MCP HTTP 端点无鉴权，默认只监听 `127.0.0.1` | 暴露到公网前必须加认证或反向代理 |
 | arXiv 类页面抽取偏窄 | 长度比 0.87、Jaccard 0.77 | 元数据头（提交时间/作者）被算进正文；不影响分节正确性 |
-| Sphinx 页面抽取偏宽 | 长度比 1.27 | 已加链接密度裁剪（1.33 → 1.27），仍有目录型区块残留 |
+| Sphinx 页面抽取偏宽 | 长度比 1.27 | 仍有目录型区块残留 |
 | 无 JS 渲染 | 纯 CSR 页面只能拿到空壳 | 文档站多为 SSR/SSG，影响面小 |
-| MCP 只有 stdio、无认证 | 本机单用户可用 | 远程接入前必须补 |
-| 检索不覆盖正文 | 只在标题/路径打分 | 词只出现在正文时会漏（有 `get_section` 兜底） |
-| 并发索引无锁 | 单进程场景 | MCP 服务端内串行执行，可接受 |
 
-## 6. 复现全部证据
+## 7. 复现全部证据
 
 ```sh
+# compare.py 的 MoonBit 侧快照默认不提交，先按 fixtures 生成
+mkdir -p tools/oracle/out-moonbit
+for f in fixtures/html/*.html; do
+  name=$(basename "$f" .html)
+  moon run cmd/main --target native -- extract "$f" > "tools/oracle/out-moonbit/$name.json"
+done
+
+moon check --target native
 moon test
 moon build --target native
 python tools/compare.py          # 需要 tools/oracle/out 的期望值（已入库）
 python tools/markdown_golden.py
 python tools/toc_check.py
 python tools/mcp_e2e.py
+python tools/mcp_http_e2e.py
 python tools/bench.py
 ```

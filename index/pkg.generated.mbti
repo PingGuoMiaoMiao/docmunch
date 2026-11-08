@@ -12,6 +12,8 @@ pub async fn build_index(String, String, String, String) -> @core.DocIndex
 
 pub fn children_of(@core.DocIndex, @core.Section) -> Array[@core.Section]
 
+pub async fn delete_repo(String, String) -> Unit
+
 pub async fn get_section_text(String, String, @core.DocIndex, String, verify? : Bool) -> (String, Bool)
 
 pub fn index_file_path(String, String) -> String
@@ -27,6 +29,8 @@ pub fn raw_file_path(String, String, String) -> String
 pub async fn read_section_text(String, String, String, @core.Section) -> String
 
 pub fn repo_dir(String, String) -> String
+
+pub fn repo_key(String) -> String
 
 pub async fn save_index(String, String, @core.DocIndex) -> Unit
 

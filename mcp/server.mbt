@@ -67,21 +67,21 @@ fn prop_bool(name : String, desc : String) -> String {
 }
 
 ///|
-fn schema(props : String, required : String) -> Json raise @mcp.MCPError {
+fn schema(props : String, required : String) -> Json raise @mcpsdk.MCPError {
   let body = "{\"type\":\"object\",\"properties\":{\{props}},\"required\":[\{required}],\"additionalProperties\":false}"
   @json.parse(body) catch {
-    e => raise @mcp.MCPError::InternalError("bad schema: \{e.to_string()}")
+    e => raise @mcpsdk.MCPError::InternalError("bad schema: \{e.to_string()}")
   }
 }
 
 ///|
-fn text_result(s : String) -> @mcp.ToolResult {
-  @mcp.ToolResult::text(s)
+fn text_result(s : String) -> @mcpsdk.ToolResult {
+  @mcpsdk.ToolResult::text(s)
 }
 
 ///|
-fn failure(msg : String) -> Result[@mcp.ToolResult, @mcp.MCPError] {
-  Ok(@mcp.ToolResult::error(msg))
+fn failure(msg : String) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
+  Ok(@mcpsdk.ToolResult::error(msg))
 }
 
 ///|
@@ -107,7 +107,7 @@ async fn index_inputs(
   input : String,
   repo : String,
   doc_path : String,
-) -> Result[@mcp.ToolResult, @mcp.MCPError] {
+) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
   let opts = @http.default_fetch_options()
   let is_url = input.has_prefix("http://") || input.has_prefix("https://")
   if !is_url && (input.has_suffix(".md") || input.has_suffix(".markdown")) {
@@ -148,8 +148,8 @@ async fn index_inputs(
 
 ///|
 /// Build the docmunch MCP server rooted at `root`.
-pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
-  let mut server = @mcp.MCPServer::MCPServer("docmunch", "0.1.0")
+pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  let mut server = @mcpsdk.MCPServer::MCPServer("docmunch", "0.1.0")
 
   server = server.tool(
     "list_repos",
@@ -193,7 +193,7 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
         Some(r) => r
         None => parsed.host()
       }
-      index_inputs(root, url, repo, "index.md")
+      index_inputs(root, url, repo, @http.doc_path_for_url(url))
     },
   )
 
@@ -215,8 +215,7 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
         Some(r) => r
         None => "local"
       }
-      let doc_path = path.replace_all(old="\\", new="/")
-      index_inputs(root, path, repo, doc_path)
+      index_inputs(root, path, repo, @http.normalize_local_path(path))
     },
   )
 
@@ -236,13 +235,17 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
 
   server = server.tool(
     "get_section",
-    "Return one section's Markdown by id (byte-range read; optional hash verify).",
+    "Return one section's Markdown by id (byte-range read; optional hash verify and byte cap).",
     schema(
       prop_str("repo", "Repo name.") +
       "," +
       prop_str("id", "Section id from get_toc/search_sections.") +
       "," +
-      prop_bool("verify", "Re-hash the retrieved bytes."),
+      prop_bool("verify", "Re-hash the retrieved bytes.") +
+      "," +
+      prop_int(
+        "max_bytes", "Max Markdown bytes to return, default 8000; 0 = no limit.",
+      ),
       "\"repo\",\"id\"",
     ),
     async fn(_ctx, args) {
@@ -264,9 +267,15 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
       if text == "" && !ok {
         return failure("section not found: \{id}")
       }
+      // Verify the full bytes first, then cap the payload: truncation must not
+      // make a matching section look corrupt.
+      let max_bytes = arg_int(args, "max_bytes", 8000)
+      let total_bytes : Int32 = @utf8.encode(text).length()
+      let markdown = @http.truncate_utf8(text, max_bytes)
+      let truncated = max_bytes > 0 && total_bytes > max_bytes
       Ok(
         text_result(
-          "{\"verified\":\{ok},\"markdown\":\{@http.json_escape(text)}}",
+          "{\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@http.json_escape(markdown)}}",
         ),
       )
     },
@@ -276,7 +285,13 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
     "get_section_context",
     "Return a section with its ancestor chain and child summaries.",
     schema(
-      prop_str("repo", "Repo name.") + "," + prop_str("id", "Section id."),
+      prop_str("repo", "Repo name.") +
+      "," +
+      prop_str("id", "Section id.") +
+      "," +
+      prop_int(
+        "max_bytes", "Max Markdown bytes for the section body, default 8000; 0 = no limit.",
+      ),
       "\"repo\",\"id\"",
     ),
     async fn(_ctx, args) {
@@ -299,6 +314,10 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
       ) catch {
         e => return failure("read failed: \{e.to_string()}")
       }
+      let max_bytes = arg_int(args, "max_bytes", 8000)
+      let total_bytes : Int32 = @utf8.encode(text).length()
+      let markdown = @http.truncate_utf8(text, max_bytes)
+      let truncated = max_bytes > 0 && total_bytes > max_bytes
       let ancestors = @index.ancestors_of(index, section)
       let children = @index.children_of(index, section)
       let sb = StringBuilder::StringBuilder()
@@ -323,7 +342,7 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
         )
       }
       sb.write_string(
-        "],\"section\":{\"id\":\{@http.json_escape(section.id)},\"title\":\{@http.json_escape(section.title)},\"verified\":\{ok},\"markdown\":\{@http.json_escape(text)}}}",
+        "],\"section\":{\"id\":\{@http.json_escape(section.id)},\"title\":\{@http.json_escape(section.title)},\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@http.json_escape(markdown)}}}",
       )
       Ok(text_result(sb.to_string()))
     },
@@ -374,10 +393,7 @@ pub fn build_server(root : String) -> @mcp.MCPServer raise @mcp.MCPError {
     schema(prop_str("repo", "Repo name."), "\"repo\""),
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
-      let dir = @index.repo_dir(root, repo.replace_all(old="/", new="_"))
-      @fs.rmdir(dir, recursive=true) catch {
-        e => return failure("delete failed: \{e.to_string()}")
-      }
+      @index.delete_repo(root, repo)
       Ok(text_result("{\"deleted\":\{@http.json_escape(repo)}}"))
     },
   )

@@ -17,6 +17,17 @@ pub suberror FetchError {
 }
 
 ///|
+/// True only for failures that a second attempt can plausibly fix. Everything
+/// else (bad URL, policy block, oversized body, timeout, cache trouble) is
+/// deterministic-ish, so retrying it would just double the latency.
+pub fn is_retryable(e : FetchError) -> Bool {
+  match e {
+    NetworkError(_) => true
+    _ => false
+  }
+}
+
+///|
 pub fn FetchError::code(self : FetchError) -> String {
   match self {
     BadUrl(_) => "bad_url"

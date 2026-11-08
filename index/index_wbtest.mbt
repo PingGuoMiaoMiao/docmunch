@@ -65,3 +65,65 @@ async test "search matches body keywords, not just titles" {
   assert_eq(hits.length(), 1)
   assert_eq(hits[0].title, "Install")
 }
+
+///|
+async test "repo label with spaces round-trips through list and delete" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  ignore(build_index(root, "my repo", "guide.md", sample_md()))
+  let repos = list_repos(root)
+  assert_eq(repos.length(), 1)
+  assert_eq(repos[0], "my repo")
+  assert_true(load_index(root, "my repo") is Some(_))
+  delete_repo(root, "my repo")
+  let after = list_repos(root)
+  assert_eq(after.length(), 0)
+  // Deleting an unindexed repo is idempotent, not an error.
+  delete_repo(root, "my repo")
+  assert_eq(list_repos(root).length(), 0)
+}
+
+///|
+async test "space and underscore repo names stay distinct" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  // Safe names are used verbatim; rewritten names gain a digest suffix.
+  assert_eq(repo_key("a_b"), "a_b")
+  assert_true(repo_key("a b").has_prefix("a_b-"))
+  ignore(build_index(root, "a b", "one.md", sample_md()))
+  ignore(build_index(root, "a_b", "two.md", sample_md()))
+  assert_true(repo_dir(root, "a b") != repo_dir(root, "a_b"))
+  assert_true(load_index(root, "a b") is Some(_))
+  assert_true(load_index(root, "a_b") is Some(_))
+  let repos = list_repos(root)
+  assert_eq(repos.length(), 2)
+  let mut saw_space = false
+  let mut saw_underscore = false
+  for r in repos {
+    if r == "a b" {
+      saw_space = true
+    }
+    if r == "a_b" {
+      saw_underscore = true
+    }
+  }
+  assert_true(saw_space)
+  assert_true(saw_underscore)
+}
+
+///|
+async test "dot-dot repo name never escapes the root" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  // ".", ".." and "" are never emitted as directory names.
+  assert_true(repo_key("..").has_prefix("repo-"))
+  assert_true(repo_key(".").has_prefix("repo-"))
+  assert_true(repo_key("").has_prefix("repo-"))
+  let dir = repo_dir(root, "..")
+  assert_true(dir.has_prefix(root + "/"))
+  ignore(build_index(root, "..", "guide.md", sample_md()))
+  assert_true(load_index(root, "..") is Some(_))
+  let repos = list_repos(root)
+  assert_eq(repos.length(), 1)
+  assert_eq(repos[0], "..")
+}

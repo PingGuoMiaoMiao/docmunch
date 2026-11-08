@@ -68,6 +68,43 @@ test "setext headings become level 1 and 2" {
 }
 
 ///|
+test "yaml frontmatter does not produce fake headings" {
+  let text = "---\ntitle: x\ntags: [a, b]\n---\n\n# Real\n"
+  let sections = split_document("local/x", "doc.md", text)
+  assert_eq(sections.length(), 2)
+  assert_eq(sections[0].level, 0)
+  assert_eq(sections[0].title, "")
+  assert_eq(sections[1].title, "Real")
+  for s in sections {
+    assert_false(s.title.contains("tags"))
+  }
+  // preamble + first section cover every byte with no gaps.
+  assert_eq(sections[0].byte_start, 0)
+  assert_eq(sections[0].byte_end, sections[1].byte_start)
+  assert_eq(sections[1].byte_end, @core.utf8_len(text))
+}
+
+///|
+test "frontmatter after a BOM is still skipped" {
+  let text = "\u{FEFF}---\ntitle: x\n---\n# A\n"
+  let sections = split_document("local/x", "doc.md", text)
+  assert_eq(sections.length(), 2)
+  assert_eq(sections[0].level, 0)
+  assert_eq(sections[1].title, "A")
+  assert_eq(sections[0].byte_end, sections[1].byte_start)
+  assert_eq(sections[1].byte_end, @core.utf8_len(text))
+}
+
+///|
+test "unclosed frontmatter falls back to plain text" {
+  let text = "---\ntitle: x\n# A\n"
+  let sections = split_document("local/x", "doc.md", text)
+  assert_eq(sections.length(), 2)
+  assert_eq(sections[0].level, 0)
+  assert_eq(sections[1].title, "A")
+}
+
+///|
 test "byte offsets stay correct with CJK text" {
   let text = "# 中文\n\n内容\n\n## 下一节\n"
   let sections = split_document("local/x", "doc.md", text)
