@@ -20,4 +20,5 @@ import {
   "tonyfettes/url@0.3.5",
   "gmlewis/sha256@0.18.2",
   "moonbit-community/html@0.2.3",
+  "moonbit-community/cmark@0.4.12",
 }

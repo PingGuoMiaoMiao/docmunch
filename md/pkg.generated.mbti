@@ -2,7 +2,7 @@
 package "pingguomiaomiao/docmunch/md"
 
 // Values
-pub fn normalize_newlines(String) -> String
+pub fn html_to_markdown(String, base_url? : String) -> String
 
 // Errors
 

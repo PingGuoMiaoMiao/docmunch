@@ -11,6 +11,7 @@ fn usage() -> Unit {
   println("                       [--max-bytes N] [--timeout MS]")
   println("  docmunch detect <url>")
   println("  docmunch extract <url|file> [--allow-private] [--out-html PATH]")
+  println("  docmunch markdown <url|file> [--out PATH] [--allow-private]")
   println("  docmunch smoke <url-file>")
 }
 
@@ -176,6 +177,31 @@ async fn cmd_smoke(path : String) -> Unit {
 }
 
 ///|
+async fn cmd_markdown(input : String, args : Array[String]) -> Unit {
+  let source = match load_document(input, args) {
+    Some(html) => html
+    None => return
+  }
+  let ex = @extract.extract(source, input)
+  let base = if input.has_prefix("http://") || input.has_prefix("https://") {
+    input
+  } else {
+    ""
+  }
+  let markdown = @md.html_to_markdown(ex.html, base_url=base)
+  match option_value(args, "--out") {
+    Some(path) =>
+      try {
+        @fs.write_file(path, markdown, create_mode=CreateOrTruncate)
+        println("wrote=\{path} bytes=\{markdown.length()}")
+      } catch {
+        e => println("write_error=\{e.to_string()}")
+      }
+    None => println(markdown)
+  }
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -201,6 +227,12 @@ async fn main {
       return
     }
     cmd_extract(args[2], args)
+  } else if cmd == "markdown" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_markdown(args[2], args)
   } else if cmd == "smoke" {
     if args.length() < 3 {
       usage()

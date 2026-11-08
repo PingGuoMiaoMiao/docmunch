@@ -4,6 +4,7 @@ import {
   "moonbitlang/async/fs",
   "pingguomiaomiao/docmunch/http",
   "pingguomiaomiao/docmunch/extract",
+  "pingguomiaomiao/docmunch/md",
 }
 
 pkgtype(kind: "executable")
