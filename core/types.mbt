@@ -17,7 +17,7 @@ pub(all) struct Section {
   byte_end : Int32
   parent_id : String
   content_hash : String
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub(all) struct DocIndex {
@@ -25,7 +25,7 @@ pub(all) struct DocIndex {
   doc_paths : Array[String]
   sections : Array[Section]
   index_version : Int32
-}
+} derive(ToJson, FromJson)
 
 ///|
 pub let index_version : Int32 = 1

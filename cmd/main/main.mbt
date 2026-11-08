@@ -13,6 +13,10 @@ fn usage() -> Unit {
   println("  docmunch extract <url|file> [--allow-private] [--out-html PATH]")
   println("  docmunch markdown <url|file> [--out PATH] [--allow-private]")
   println("  docmunch toc <file.md> [--verify]")
+  println("  docmunch index <url|file> [--repo NAME] [--root DIR]")
+  println("  docmunch search <repo> <query> [--root DIR]")
+  println("  docmunch section <repo> <id> [--verify] [--root DIR]")
+  println("  docmunch repos [--root DIR]")
   println("  docmunch smoke <url-file>")
 }
 
@@ -228,6 +232,192 @@ async fn cmd_toc(path : String, args : Array[String]) -> Unit {
 }
 
 ///|
+fn root_of(args : Array[String]) -> String {
+  match option_value(args, "--root") {
+    Some(v) => v
+    None => ".doc-index"
+  }
+}
+
+///|
+fn repo_for(input : String) -> String {
+  if input.has_prefix("http://") || input.has_prefix("https://") {
+    let t = @http.Target::parse(input) catch { _ => return "web" }
+    t.host()
+  } else {
+    "local"
+  }
+}
+
+///|
+fn doc_path_for(input : String) -> String {
+  if !(input.has_prefix("http://") || input.has_prefix("https://")) {
+    // Local files keep their relative path so toc ids and index ids agree.
+    let sb = StringBuilder::StringBuilder()
+    for c in input {
+      if c == '\\' {
+        sb.write_char('/')
+      } else if not(c == '.' && sb.to_string() == "..") {
+        sb.write_char(c)
+      } else {
+        sb.write_char(c)
+      }
+    }
+    return sb.to_string()
+  }
+  let slash = {
+    let mut at = -1
+    for i = 0; i < input.length(); i = i + 1 {
+      if input[i].to_int() == 47 {
+        at = i
+      }
+    }
+    at
+  }
+  let tail = if slash < 0 {
+    input
+  } else {
+    input[slash + 1:input.length()].to_owned()
+  }
+  let tail = {
+    let q = {
+      let mut at = tail.length()
+      for i = 0; i < tail.length(); i = i + 1 {
+        if tail[i].to_int() == 63 || tail[i].to_int() == 35 {
+          at = i
+          break
+        }
+      }
+      at
+    }
+    tail[0:q].to_owned()
+  }
+  if tail == "" {
+    "index.md"
+  } else if tail.has_suffix(".md") || tail.has_suffix(".markdown") {
+    tail
+  } else {
+    tail + ".md"
+  }
+}
+
+///|
+async fn markdown_of(input : String, args : Array[String]) -> String? {
+  if input.has_suffix(".md") || input.has_suffix(".markdown") {
+    let text = @fs.read_file(input).text() catch {
+      e => {
+        println("error=read \{e.to_string()}")
+        return None
+      }
+    }
+    Some(text)
+  } else {
+    let html = match load_document(input, args) {
+      Some(h) => h
+      None => return None
+    }
+    let ex = @extract.extract(html, input)
+    let base = if input.has_prefix("http://") || input.has_prefix("https://") {
+      input
+    } else {
+      ""
+    }
+    Some(@md.html_to_markdown(ex.html, base_url=base))
+  }
+}
+
+///|
+async fn cmd_index(input : String, args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let repo = match option_value(args, "--repo") {
+    Some(v) => v
+    None => repo_for(input)
+  }
+  let doc_path = doc_path_for(input)
+  let text = match markdown_of(input, args) {
+    Some(t) => t
+    None => return
+  }
+  let index = @index.build_index(root, repo, doc_path, text) catch {
+    e => {
+      println("error=index \{e.to_string()}")
+      return
+    }
+  }
+  println(
+    "repo=\{repo} doc=\{doc_path} sections=\{index.sections.length()} docs=\{index.doc_paths.length()} root=\{root}",
+  )
+}
+
+///|
+async fn cmd_search(
+  repo : String,
+  query : String,
+  args : Array[String],
+) -> Unit {
+  let root = root_of(args)
+  let index = match @index.load_index(root, repo) {
+    Some(i) => i
+    None => {
+      println("error=repo_not_indexed \{repo}")
+      return
+    }
+  }
+  let hits = @index.search(index, query)
+  for hit in hits {
+    println(
+      "score=\{hit.score} level=\{hit.level} id=\{hit.id} title=\{hit.title}",
+    )
+  }
+  println("hits=\{hits.length()}")
+}
+
+///|
+async fn cmd_section(repo : String, id : String, args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let index = match @index.load_index(root, repo) {
+    Some(i) => i
+    None => {
+      println("error=repo_not_indexed \{repo}")
+      return
+    }
+  }
+  let (text, ok) = @index.get_section_text(
+    root,
+    repo,
+    index,
+    id,
+    verify=has_flag(args, "--verify"),
+  ) catch {
+    e => {
+      println("error=read \{e.to_string()}")
+      return
+    }
+  }
+  if text == "" && !ok {
+    println("error=section_not_found \{id}")
+    return
+  }
+  println("verified=\{ok} bytes=\{text.length()}")
+  println(text)
+}
+
+///|
+async fn cmd_repos(args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let repos = @index.list_repos(root) catch {
+    e => {
+      println("error=list \{e.to_string()}")
+      return
+    }
+  }
+  for r in repos {
+    println("repo=\{r}")
+  }
+  println("repos=\{repos.length()}")
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -265,6 +455,26 @@ async fn main {
       return
     }
     cmd_toc(args[2], args)
+  } else if cmd == "index" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_index(args[2], args)
+  } else if cmd == "search" {
+    if args.length() < 4 {
+      usage()
+      return
+    }
+    cmd_search(args[2], args[3], args)
+  } else if cmd == "section" {
+    if args.length() < 4 {
+      usage()
+      return
+    }
+    cmd_section(args[2], args[3], args)
+  } else if cmd == "repos" {
+    cmd_repos(args)
   } else if cmd == "smoke" {
     if args.length() < 3 {
       usage()

@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "pingguomiaomiao/docmunch/core"
 
+import {
+  "moonbitlang/core/json",
+}
+
 // Values
 pub let index_version : Int32
 
@@ -20,7 +24,7 @@ pub(all) struct DocIndex {
   doc_paths : Array[String]
   sections : Array[Section]
   index_version : Int32
-}
+} derive(ToJson, @json.FromJson)
 
 pub(all) struct Section {
   id : String
@@ -32,7 +36,7 @@ pub(all) struct Section {
   byte_end : Int32
   parent_id : String
   content_hash : String
-}
+} derive(ToJson, @json.FromJson)
 pub fn Section::byte_len(Self) -> Int32
 pub fn Section::is_root(Self) -> Bool
 

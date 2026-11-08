@@ -18,8 +18,8 @@ non-commercial-licensed, so only its *design* was studied).
 | P2 | DOM helpers + Readability-compatible extraction + metadata | ✅ done (3/3 fixtures, avg Jaccard 0.92) |
 | P3 | HTML → CommonMark, link absolutization, golden files | ✅ done |
 | P4 | section split: ATX + setext, fence-aware, hashes, stable slugs | ✅ done |
-| P5 | index store, search, byte-range retrieval | ⏳ next |
-| P6 | MCP server (stdio) | ⏳ |
+| P5 | index store, search, byte-range retrieval | ✅ done |
+| P6 | MCP server (stdio) | ⏳ next |
 
 ## Quick start
 
@@ -43,6 +43,11 @@ python tools/markdown_golden.py
 # section tree with byte offsets + hashes, then verify the byte contract
 moon run cmd/main --target native -- toc fixtures/markdown/readability-readme.md --verify
 python tools/toc_check.py
+
+# index -> search -> retrieve (O(1) byte-range read, hash-verified)
+moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
+moon run cmd/main --target native -- search local readability
+moon run cmd/main --target native -- section local "<id from search>" --verify
 
 # compare extraction against the Node Readability oracle
 python tools/compare.py
@@ -91,6 +96,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 - [docs/p2-extraction.md](docs/p2-extraction.md) — P2 extraction method, metrics and known gaps.
 - [docs/p3-markdown.md](docs/p3-markdown.md) — P3 HTML→CommonMark rules, validation and known gaps.
 - [docs/p4-sectioning.md](docs/p4-sectioning.md) — P4 section contract, byte-level checks and gaps.
+- [docs/p5-index.md](docs/p5-index.md) — P5 storage layout, search scoring and retrieval.
 - [docs/competition-brief.md](docs/competition-brief.md) — background: the MoonBit
   hackathon this project is being built for.
 

@@ -10,6 +10,8 @@ pub fn parse_atx(String) -> Heading?
 
 pub fn section_text(String, @core.Section) -> String
 
+pub fn sha256_of(String) -> String
+
 pub fn slice_bytes(String, Int32, Int32) -> String
 
 pub fn split_document(String, String, String) -> Array[@core.Section]

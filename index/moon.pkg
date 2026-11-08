@@ -1,1 +1,8 @@
-// Storage stage: will import moonbitlang/core/json and sha256 in P5.
+import {
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/async/fs",
+  "gmlewis/sha256",
+  "pingguomiaomiao/docmunch/core",
+  "pingguomiaomiao/docmunch/section",
+}

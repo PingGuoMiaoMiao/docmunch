@@ -1,2 +1,3 @@
-// Shared model types for every pipeline stage.
-// Keep this package dependency-free so every other package can import it.
+import {
+  "moonbitlang/core/json",
+}
