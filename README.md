@@ -21,6 +21,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P5 | index store, search, byte-range retrieval | ✅ done |
 | P6 | MCP server (stdio, 8 tools) | ✅ done |
 | P7 | link-density pruning, CI, benchmark, delivery docs | ✅ done |
+| P8 | body-aware search (section keywords), MCP HTTP transport | ✅ done |
 
 ## Quick start
 
@@ -50,8 +51,10 @@ moon run cmd/main --target native -- index fixtures/markdown/readability-readme.
 moon run cmd/main --target native -- search local readability
 moon run cmd/main --target native -- section local "<id from search>" --verify
 
-# MCP server over stdio + raw JSON-RPC end-to-end test
+# MCP server: stdio (default) or Streamable HTTP
 python tools/mcp_e2e.py
+moon run cmd/main --target native -- mcp --http --port 4240 --root .doc-index
+python tools/mcp_http_e2e.py
 
 # compare extraction against the Node Readability oracle
 python tools/compare.py

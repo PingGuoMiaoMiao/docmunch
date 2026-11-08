@@ -18,7 +18,9 @@ fn usage() -> Unit {
   println("  docmunch section <repo> <id> [--verify] [--root DIR]")
   println("  docmunch repos [--root DIR]")
   println("  docmunch delete <repo> [--root DIR]")
-  println("  docmunch mcp [--root DIR]        # stdio MCP server")
+  println(
+    "  docmunch mcp [--root DIR] [--http] [--port N]   # stdio or HTTP MCP server",
+  )
   println("  docmunch smoke <url-file>")
 }
 
@@ -428,8 +430,19 @@ async fn cmd_mcp(args : Array[String]) -> Unit {
       return
     }
   }
-  server.run_stdio() catch {
-    e => println("error=transport \{e.to_string()}")
+  if has_flag(args, "--http") {
+    let port = match option_value(args, "--port") {
+      Some(v) => @http.parse_int_or(v, 4240)
+      None => 4240
+    }
+    println("listening=http://127.0.0.1:\{port}/mcp")
+    server.run_http(port~, path="/mcp") catch {
+      e => println("error=transport \{e.to_string()}")
+    }
+  } else {
+    server.run_stdio() catch {
+      e => println("error=transport \{e.to_string()}")
+    }
   }
 }
 

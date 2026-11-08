@@ -17,6 +17,7 @@ pub(all) struct Section {
   byte_end : Int32
   parent_id : String
   content_hash : String
+  keywords : Array[String]
 } derive(ToJson, FromJson)
 
 ///|
@@ -28,7 +29,7 @@ pub(all) struct DocIndex {
 } derive(ToJson, FromJson)
 
 ///|
-pub let index_version : Int32 = 1
+pub let index_version : Int32 = 2
 
 ///|
 /// Number of UTF-8 bytes a single code point occupies.

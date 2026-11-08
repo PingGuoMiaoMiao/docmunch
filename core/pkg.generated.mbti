@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn extract_keywords(String, max_count? : Int32) -> Array[String]
+
 pub let index_version : Int32
 
 pub fn make_section_id(String, String, String, Int32) -> String
@@ -36,6 +38,7 @@ pub(all) struct Section {
   byte_end : Int32
   parent_id : String
   content_hash : String
+  keywords : Array[String]
 } derive(ToJson, @json.FromJson)
 pub fn Section::byte_len(Self) -> Int32
 pub fn Section::is_root(Self) -> Bool

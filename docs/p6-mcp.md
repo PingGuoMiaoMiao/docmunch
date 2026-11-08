@@ -63,7 +63,7 @@ all MCP e2e checks passed
 
 | 差距 | 影响 | 计划 |
 | --- | --- | --- |
-| 只有 stdio，没有 HTTP | 远程接入需要 SSH/本地 | P6.1 可选 `run_http` |
+| ~~只有 stdio~~ | 已补 HTTP（`--http --port`），见 [p8-enhancements.md](p8-enhancements.md) | ✅ |
 | 没有认证 | 本机单用户场景可接受 | 远程前必须加 |
 | 没有 resources/prompts | 只能用工具 | 暂不需要 |
 | `delete_index` 的 repo 名直接落成目录名 | 只做了 `/`→`_` 处理 | 与 D29 对齐，统一走 sanitize |

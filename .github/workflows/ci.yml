@@ -38,5 +38,8 @@ jobs:
       - name: Section byte contract
         run: python tools/toc_check.py
 
-      - name: MCP end-to-end
+      - name: MCP end-to-end (stdio)
         run: python tools/mcp_e2e.py
+
+      - name: MCP end-to-end (HTTP)
+        run: python tools/mcp_http_e2e.py

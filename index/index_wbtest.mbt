@@ -55,3 +55,13 @@ async test "missing repo loads as none" {
   let loaded = load_index(root, "nope")
   assert_true(loaded is None)
 }
+
+///|
+async test "search matches body keywords, not just titles" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let index = build_index(root, "local", "guide.md", sample_md())
+  let hits = search(index, "twice")
+  assert_eq(hits.length(), 1)
+  assert_eq(hits[0].title, "Install")
+}

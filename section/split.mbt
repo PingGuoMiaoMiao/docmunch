@@ -271,6 +271,7 @@ pub fn split_document(
       byte_end: heads[0].start,
       parent_id: "",
       content_hash: sha256_hex_text(slice_bytes(text, 0, heads[0].start)),
+      keywords: @core.extract_keywords(slice_bytes(text, 0, heads[0].start)),
     })
   }
 
@@ -317,6 +318,7 @@ pub fn split_document(
       byte_end,
       parent_id,
       content_hash: sha256_hex_text(slice_bytes(text, h.start, byte_end)),
+      keywords: @core.extract_keywords(slice_bytes(text, h.start, byte_end)),
     })
     ancestors.push((h.level, id, unique))
   }

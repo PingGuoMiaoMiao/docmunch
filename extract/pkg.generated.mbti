@@ -34,6 +34,8 @@ pub fn score_candidates(@src.Document) -> Map[Int32, Double]
 
 pub fn str_contains_pub(String, String) -> Bool
 
+pub fn strip_link_blocks(@src.Document) -> Unit
+
 pub fn tag_name(@src.Document, Int32) -> String
 
 pub fn text_lengths(@src.Document, Int32) -> Map[Int32, Int32]

@@ -85,6 +85,7 @@ fn score_section(
     score = score + 10
   }
   let title_words = words_of(s.title)
+  let mut body_hits = 0
   for word in query_words {
     if title_words.contains(word) {
       score = score + 5
@@ -92,8 +93,13 @@ fn score_section(
     if count_occurrences(path, word) > 0 {
       score = score + 2
     }
+    if s.keywords.contains(word) {
+      body_hits = body_hits + 1
+    }
   }
-  score
+  // Body keywords are weaker evidence than titles; cap their contribution.
+  let body_cap = if body_hits > 5 { 5 } else { body_hits }
+  score + body_cap
 }
 
 ///|
