@@ -9,3 +9,4 @@ node_modules/
 
 # local index cache produced by the CLI
 .doc-index/
+.doc-index-test/
