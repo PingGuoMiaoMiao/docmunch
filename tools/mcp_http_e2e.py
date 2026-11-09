@@ -9,6 +9,7 @@ Exit code 0 = all assertions passed.
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 import pathlib
 import subprocess
 import sys
@@ -144,6 +145,36 @@ def main() -> int:
         )["result"]
         payload = json.loads(tool_text(got))
         check("get_section verified", payload.get("verified") is True, str(payload)[:120])
+
+        # Concurrent index writes must not lose updates (shared mutex, D44).
+        repo2 = "http-concurrent"
+        fixtures = [
+            "fixtures/markdown/arxiv-hichunk.md",
+            "fixtures/markdown/python-asyncio.md",
+        ]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [
+                pool.submit(
+                    post,
+                    url,
+                    "tools/call",
+                    {"name": "index_local", "arguments": {"path": path, "repo": repo2}},
+                    100 + i,
+                )
+                for i, path in enumerate(fixtures)
+            ]
+            for future in futures:
+                future.result()
+        toc2 = post(
+            url, "tools/call", {"name": "get_toc", "arguments": {"repo": repo2}}, 110
+        )["result"]
+        seen = {s.get("path") for s in json.loads(tool_text(toc2)).get("sections", [])}
+        check(
+            "concurrent indexing keeps both docs",
+            all(p in seen for p in fixtures),
+            str(seen),
+        )
+        post(url, "tools/call", {"name": "delete_index", "arguments": {"repo": repo2}}, 111)
 
         deleted = post(
             url, "tools/call", {"name": "delete_index", "arguments": {"repo": repo}}, 6

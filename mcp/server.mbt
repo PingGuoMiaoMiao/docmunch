@@ -150,6 +150,10 @@ async fn index_inputs(
 /// Build the docmunch MCP server rooted at `root`.
 pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   let mut server = @mcpsdk.MCPServer::MCPServer("docmunch", "0.1.0")
+  // Serialize index mutations: the HTTP transport handles requests concurrently
+  // and index writes are read-modify-write (D44). The array keeps one shared
+  // mutex across the closures that capture it.
+  let index_gate : Array[@async.Mutex] = [@async.Mutex::Mutex()]
 
   server = server.tool(
     "list_repos",
@@ -182,6 +186,8 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       "\"url\"",
     ),
     async fn(_ctx, args) {
+      index_gate[0].acquire()
+      defer index_gate[0].release()
       let url = arg_str(args, "url")
       if url == "" {
         return failure("missing required argument: url")
@@ -207,6 +213,8 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       "\"path\"",
     ),
     async fn(_ctx, args) {
+      index_gate[0].acquire()
+      defer index_gate[0].release()
       let path = arg_str(args, "path")
       if path == "" {
         return failure("missing required argument: path")
@@ -392,6 +400,8 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
     "Delete a repo's index and raw cache.",
     schema(prop_str("repo", "Repo name."), "\"repo\""),
     async fn(_ctx, args) {
+      index_gate[0].acquire()
+      defer index_gate[0].release()
       let repo = arg_str(args, "repo")
       @index.delete_repo(root, repo)
       Ok(text_result("{\"deleted\":\{@http.json_escape(repo)}}"))

@@ -208,6 +208,16 @@ pub async fn check_target(
   if is_private_ip(ip) {
     raise Blocked(host)
   }
+  // Rebinding mitigation (best effort, see D43): the HTTP client resolves the
+  // host once more when it connects, so one lookup cannot prove anything. A
+  // second lookup right before the request narrows the window: if the name now
+  // points at a private address we refuse instead of letting the client pick it.
+  let again = @socket.Addr::resolve(host, port=t.default_port()) catch {
+    _ => return
+  }
+  if is_private_ip(again.to_string()) {
+    raise Blocked(host)
+  }
 }
 
 ///|

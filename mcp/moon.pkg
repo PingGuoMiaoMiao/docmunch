@@ -1,5 +1,6 @@
 import {
   "colmugx/mcp" @mcpsdk,
+  "moonbitlang/async",
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/async/fs",

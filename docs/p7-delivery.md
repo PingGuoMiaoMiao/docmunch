@@ -76,6 +76,8 @@ moon run cmd/main --target native -- mcp
 | frontmatter 假标题 | closing `---` 被 setext 规则误判，frontmatter 内容成一节 | 识别并跳过 YAML frontmatter，字节归入 preamble（D41） |
 | 代码块空行被压缩 | 全局压空行，代码块内连续空行丢失 | 围栏感知：围栏内逐行保留，围栏外最多 1 个空行（D41） |
 | 极简 HTML 抽取死循环 | 候选容器直接挂 body 时，折叠/unwrap 循环对 document 节点空转 | 父节点为 body 时直接返回，两个循环都以 document 根为边界（D42） |
+| HTTP MCP 并发写索引 | 并发 `index_*` 读改写互相覆盖（实测 3/3 丢文档） | 单把共享 Mutex 串行化三个写工具，e2e 增加并发断言（D44） |
+| DNS rebinding | 单次解析后被客户端二次解析绕过 | 请求前二次解析拦截 + 文档标注为缓解，未声称修复（D43） |
 | stderr / stdout 混用 | 错误与正常结果都走 stdout | 诊断走 `fail()` → stderr，stdout 只留数据 |
 | 编译与测试卫生 | MCP SDK 与本地包同名告警；fetch 测试端口写死 | SDK 别名 `@mcpsdk`；fetch 测试改用动态端口 |
 
@@ -85,7 +87,7 @@ moon run cmd/main --target native -- mcp
 
 | 差距 | 现状 | 影响 |
 | --- | --- | --- |
-| DNS rebinding | SSRF 校验只检查解析出的目标 IP；域名可在校验后重新指向内网 | 本机 MCP 场景需信任被索引站点；彻底修复要把解析结果 pin 到连接 |
+| DNS rebinding | SSRF 校验后客户端会再解析一次域名 | 已加请求前二次解析拦截（窗口变窄但未消除）；根治需要 pinned-IP 客户端（D43） |
 | 非 UTF-8 文档 | 只按 UTF-8 解码；声明非 UTF-8 时 `charset_warning=true`，正文可能乱码 | 中文 GBK / Shift_JIS 站点抽取质量下降 |
 | derive 警告 | `core/types.mbt` 的 `derive(ToJson, FromJson)` 触发 3 处 `implicit_impl_as_method` 编译器警告 | 仅告警，不影响 JSON 往返；编译器升级前需改显式 `extend` |
 | HTTP 并发 | Streamable HTTP 单进程处理请求，跨请求没有 repo 级写锁；MCP 服务端内工具调用串行 | 并发写同一 repo 可能互相覆盖；单用户本机场景可接受 |
