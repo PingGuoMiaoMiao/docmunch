@@ -31,6 +31,12 @@ test "private hostnames" {
   assert_true(is_private_host("foo.local"))
   assert_true(is_private_host("127.0.0.1"))
   assert_false(is_private_host("example.com"))
+  // Domain names that merely start with a private-range prefix are not IPs.
+  assert_false(is_private_host("10.example.com"))
+  assert_false(is_private_host("192.168.example.com"))
+  assert_true(is_private_host("10.1.2.3"))
+  assert_true(is_private_host("192.168.1.1"))
+  assert_true(is_private_host("fd00::1"))
 }
 
 ///|

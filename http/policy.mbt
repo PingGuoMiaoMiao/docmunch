@@ -174,17 +174,46 @@ pub fn is_private_ip(ip : String) -> Bool {
 /// Hostname-level blocklist, checked before any DNS lookup.
 pub fn is_private_host(host : String) -> Bool {
   let h = host.to_lower()
-  h == "" ||
-  h == "localhost" ||
-  h == "0.0.0.0" ||
-  h == "::1" ||
-  h.has_prefix("127.") ||
-  h.has_prefix("10.") ||
-  h.has_prefix("192.168.") ||
-  h.has_prefix("169.254.") ||
-  h.has_suffix(".local") ||
-  h.has_suffix(".localhost") ||
-  h.has_suffix(".internal")
+  if h == "" || h == "localhost" || h == "0.0.0.0" || h == "::1" {
+    return true
+  }
+  if h.has_suffix(".local") ||
+    h.has_suffix(".localhost") ||
+    h.has_suffix(".internal") {
+    return true
+  }
+  if looks_like_ipv4(h) {
+    return is_private_ipv4(h)
+  }
+  if h.contains(":") {
+    return is_private_ipv6(h)
+  }
+  // A domain such as `10.example.com` is not an IP literal and must not be
+  // rejected by the `10.` rule.
+  false
+}
+
+///|
+fn looks_like_ipv4(s : String) -> Bool {
+  let mut segments = 0
+  let mut digits = 0
+  for c in s {
+    if c == '.' {
+      if digits == 0 || digits > 3 {
+        return false
+      }
+      segments = segments + 1
+      digits = 0
+    } else if c >= '0' && c <= '9' {
+      digits = digits + 1
+    } else {
+      return false
+    }
+  }
+  if digits == 0 || digits > 3 {
+    return false
+  }
+  segments + 1 == 4
 }
 
 ///|

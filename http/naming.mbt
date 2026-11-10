@@ -73,11 +73,33 @@ pub fn doc_path_for_url(url : String) -> String {
   let parsed = @url.Url::parse(url) catch { _ => return "index.md" }
   let body = pathname_body(parsed.pathname())
   let base = if body == "" { "index" } else { body }
+  let (stem, ext) = split_md_extension(base)
   if parsed.search() == "" && parsed.hash() == "" {
-    base + ".md"
+    stem + ext
   } else {
     let digest = sha256_hex(@utf8.encode(url))
-    base + "-" + digest[0:8].to_owned() + ".md"
+    stem + "-" + digest[0:8].to_owned() + ext
+  }
+}
+
+///|
+/// Split an existing Markdown extension off `base` (case-insensitive); when the
+/// path has none, the returned extension is `.md`. A URL like `/README.md` must
+/// not become `README.md.md`.
+fn split_md_extension(base : String) -> (String, String) {
+  let lower = base.to_lower()
+  if lower.has_suffix(".markdown") {
+    (
+      base[0:base.length() - 9].to_owned(),
+      base[base.length() - 9:base.length()].to_owned(),
+    )
+  } else if lower.has_suffix(".md") {
+    (
+      base[0:base.length() - 3].to_owned(),
+      base[base.length() - 3:base.length()].to_owned(),
+    )
+  } else {
+    (base, ".md")
   }
 }
 

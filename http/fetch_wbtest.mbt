@@ -403,6 +403,16 @@ test "url doc paths keep the path and disambiguate queries" {
   assert_true(q1 != q2)
   assert_true(q1 != plain && q2 != plain && frag != plain)
   assert_true(q1.has_prefix("docs-"))
+  // Existing Markdown extensions must not be doubled.
+  assert_eq(doc_path_for_url("https://example.com/README.md"), "README.md")
+  assert_eq(
+    doc_path_for_url("https://example.com/a/b.markdown"),
+    "a/b.markdown",
+  )
+  let md_query = doc_path_for_url("https://example.com/README.md?x=1")
+  assert_true(md_query.has_prefix("README-"))
+  assert_true(md_query.has_suffix(".md"))
+  assert_false(md_query.has_suffix(".md.md"))
   assert_true(q1.has_suffix(".md"))
   assert_eq(q1.length(), "docs-".length() + 8 + 3)
 }
