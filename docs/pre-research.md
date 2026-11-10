@@ -109,6 +109,16 @@
 
 **与 MoonBit 解析器的对接结论**：html5-mbt 输出的是 node-id 扁平树 + 只读访问器，**不能直接对接**，必须有适配层；但适配层不必实现完整 DOM——把 Readability 实际用到的操作收敛到约 12 个原语即可（见 decisions D3/D4）。
 
+### 2.4 参考仓库对照与取舍（2026-11-10 复核）
+
+| 仓库 | 许可 / 状态 | 采用的 | 不采用 / 仅测试期使用 |
+| --- | --- | --- | --- |
+| [PingGuoMiaoMiao/docmunch](https://github.com/PingGuoMiaoMiao/docmunch) | MIT；约 1 KB、0★；2026-11-07 创建后未更新，仓库里只有 `LICENSE` 和一个 10 字节的 `README.md`（内容 `# docmunch`） | 无——它是任务里指定的参考仓库，只作为项目命名由来记录 | 没有任何代码可参考；预研阶段即推翻"照搬翻译"路线（§0.1） |
+| [jgravelle/jdocmunch-mcp](https://github.com/jgravelle/jdocmunch-mcp) | Python；206★；2026-11-05 push；许可证 **NOASSERTION（free for non-commercial）** | section id `{repo}::{doc_path}::{slug}#{level}`、UTF-8 字节偏移、文件级 sha256 增量、11 个工具的输入输出契约、`_meta` 响应信封 | 实现代码（许可非 OSI，本项目 clean-room 重写）、AI 摘要与 embedding 层、Python 运行时 |
+| [mozilla/readability](https://github.com/mozilla/readability) | Apache-2.0 | 候选打分与清理的算法形状、`parse()` 的输入输出边界（§2.3） | JS 实现本身与 jsdom 式的完整 DOM；其 Node 版本仅作测试期差分 oracle（`tools/oracle/`） |
+
+> 以上仓库只作来源标注与设计参考，本项目未复制其代码。MoonCakes 注册表中不存在 `docmunch` / `jdocmunch` 同名包（2026-11-10 检索），因此没有可直接复用的 MoonBit 实现。
+
 ---
 
 ## 3. 架构决策
@@ -178,16 +188,18 @@
 
 ---
 
-## 5. 证据附录（本机实测）
+## 5. 证据附录（本机实测，2026-11-10 复核）
 
 | 项 | 结果 |
 | --- | --- |
 | MoonBit 工具链 | `moon 0.1.20261028 (e1e1f15 2026-10-28)` |
 | 注册表索引 | `~/.moon/registry/index` 共 **3,457** 个包索引文件 |
-| `moonbit-community/html` | 0.2.3，repo `moonbit-community/html5-mbt` |
-| `moonbit-community/cmark` | 0.4.12，repo `moonbit-community/cmark.mbt` |
+| `moonbit-community/html` | 0.2.3，repo [moonbit-community/html5-mbt](https://github.com/moonbit-community/html5-mbt) |
+| `moonbit-community/cmark` | 0.4.12，repo [moonbit-community/cmark.mbt](https://github.com/moonbit-community/cmark.mbt) |
 | `moonbitlang/regexp` | 0.3.6（alpha） |
 | `moonbitlang/async` | README 标注 experimental，未来由 `moonbitlang/core/async` 取代 |
 | `colmugx/mcp` | 0.18.2，MCP 2026-07-28 |
-| `jgravelle/jdocmunch-mcp` | Python，206★，master 分支，SPEC.md 33,917 B / ARCHITECTURE.md 10,845 B |
-| `PingGuoMiaoMiao/docmunch` | 空仓库（LICENSE + 10 B README） |
+| `LL728/moon_encoding` | 0.2.0（WHATWG Encoding Standard，Apache-2.0），用于 charset 转码（D45） |
+| [jgravelle/jdocmunch-mcp](https://github.com/jgravelle/jdocmunch-mcp) | Python，206★，2026-11-05 push，master 分支；`SPEC.md` 33,917 B / `ARCHITECTURE.md` 10,845 B；许可 NOASSERTION |
+| [PingGuoMiaoMiao/docmunch](https://github.com/PingGuoMiaoMiao/docmunch) | 空仓库（≈1 KB：LICENSE + 10 B README），2026-11-07 创建 |
+| MoonCakes | 无 `docmunch` / `jdocmunch` 同名包，不存在可直接复用的 MoonBit 实现 |

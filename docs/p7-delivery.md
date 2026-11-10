@@ -2,17 +2,19 @@
 
 - 时间：2026-11-08
 - 目标：把 P0–P6 的成果做成可复现、可评审、可继续演进的开源项目
-- 结论：**70 个单测 + 6 套外部校验全部通过；6 条赛事验收标准逐条有证据**
+- 结论：**79 个单测 + 7 套外部校验全部通过；6 条赛事验收标准逐条有证据**
 
 ## 1. 总指标
 
 | 指标 | 结果 | 验证方式 |
 | --- | --- | --- |
-| 单元/集成测试 | **70/70 通过** | `moon test` |
+| 单元/集成测试 | **79/79 通过** | `moon test` |
 | 抽取：标题匹配 | **4/4** | `python tools/compare.py` |
 | 抽取：平均长度比 / Jaccard | **1.03 / 0.91** | 同上 |
 | Markdown 黄金文件 | **4/4 无漂移** | `python tools/markdown_golden.py` |
 | 分节字节契约 | **4/4 通过** | `python tools/toc_check.py` |
+| MCP 端到端（stdio / HTTP） | **10/10、7/7** | `python tools/mcp_e2e.py` / `tools/mcp_http_e2e.py` |
+| 验收自检 | **7 PASS / 0 FAIL** | `python tools/acceptance.py` |
 | MCP 端到端（stdio） | **10/10 断言** | `python tools/mcp_e2e.py` |
 | MCP 端到端（HTTP） | **6/6 断言** | `python tools/mcp_http_e2e.py` |
 | 索引耗时（单文档） | 42–148 ms | `python tools/bench.py` |
@@ -64,9 +66,9 @@ moon run cmd/main --target native -- section docs.moonbitlang.cn "<id>" --verify
 moon run cmd/main --target native -- mcp
 ```
 
-## 5. 本轮修复（2026-11-08 审计）
+## 5. 本轮修复（2026-11-08 审计 + 2026-11-10 迭代）
 
-这轮把审计发现的 P0/P1 问题修在源码里，并补了回归测试；取舍与拒绝的方案见 D37–D41。
+两轮审计发现的 P0/P1 问题都修在源码里，并补了回归测试；取舍与拒绝的方案见 **D37–D47**。
 
 | 修复 | 之前 | 现在 |
 | --- | --- | --- |
@@ -82,19 +84,18 @@ moon run cmd/main --target native -- mcp
 | DNS rebinding | 单次解析后被客户端二次解析绕过 | 请求前二次解析拦截 + 文档标注为缓解，未声称修复（D43） |
 | 非 UTF-8 页面乱码 | GBK/Big5 被当 UTF-8 lossy 解码 | 按 WHATWG label 真转码（`moon_encoding`），未知标签才回退并置 warning（D45） |
 | 缓存命中丢 final_url | 重定向后的页面从缓存读时身份变成请求 URL | 缓存 meta 的 final_url 参与结果与平台指纹（D46） |
+| JSON 派生弃用警告 | `derive(ToJson, FromJson)` 触发 4 条 `implicit_impl_as_method` | 追加显式 `extend`，警告清零；工具链升级后仍可编译（D47） |
 | stderr / stdout 混用 | 错误与正常结果都走 stdout | 诊断走 `fail()` → stderr，stdout 只留数据 |
 | 编译与测试卫生 | MCP SDK 与本地包同名告警；fetch 测试端口写死 | SDK 别名 `@mcpsdk`；fetch 测试改用动态端口 |
 
-验证：`moon check --target native` 0 errors（15 条存量 warning）、`moon test` 70/70、`moon build --target native` 成功；6 套外部校验全绿（compare 4/4、markdown_golden 4/4、toc_check 4/4、mcp_e2e 10/10、mcp_http_e2e 6/6、bench 正常出数）。
+验证：`moon check --target native` 0 errors（3 条存量 warning：2×`result_error_return` + 1×`unused_package`）、`moon test` 79/79、`moon build` 成功；7 套外部校验全绿（compare 4/4、markdown_golden 4/4、toc_check 4/4、mcp_e2e 10/10、mcp_http_e2e 7/7、bench 正常出数、acceptance 7 PASS）。
 
 ## 6. 已知差距（诚实的部分）
 
 | 差距 | 现状 | 影响 |
 | --- | --- | --- |
 | DNS rebinding | SSRF 校验后客户端会再解析一次域名 | 已加请求前二次解析拦截（窗口变窄但未消除）；根治需要 pinned-IP 客户端（D43） |
-| 非 UTF-8 文档 | 只按 UTF-8 解码；声明非 UTF-8 时 `charset_warning=true`，正文可能乱码 | 中文 GBK / Shift_JIS 站点抽取质量下降 |
-| derive 警告 | `core/types.mbt` 的 `derive(ToJson, FromJson)` 触发 3 处 `implicit_impl_as_method` 编译器警告 | 仅告警，不影响 JSON 往返；编译器升级前需改显式 `extend` |
-| HTTP 并发 | Streamable HTTP 单进程处理请求，跨请求没有 repo 级写锁；MCP 服务端内工具调用串行 | 并发写同一 repo 可能互相覆盖；单用户本机场景可接受 |
+| HTTP 并发 | MCP 工具内已用共享 Mutex 串行化三个写工具（D44）；跨进程/多实例仍无锁 | 单进程单用户可用；多实例共享索引目录时需外部锁 |
 | 无认证 | MCP HTTP 端点无鉴权，默认只监听 `127.0.0.1` | 暴露到公网前必须加认证或反向代理 |
 | arXiv 类页面抽取偏窄 | 长度比 0.87、Jaccard 0.77 | 元数据头（提交时间/作者）被算进正文；不影响分节正确性 |
 | Sphinx 页面抽取偏宽 | 长度比 1.27 | 仍有目录型区块残留 |

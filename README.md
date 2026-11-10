@@ -22,7 +22,8 @@ non-commercial-licensed, so only its *design* was studied).
 | P6 | MCP server (stdio, 8 tools) | ✅ done |
 | P7 | link-density pruning, CI, benchmark, delivery docs | ✅ done |
 | P8 | body-aware search (section keywords), MCP HTTP transport | ✅ done |
-| P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr | ✅ done |
+| P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr, DNS double-resolve + index mutex | ✅ done |
+| P10 | charset-aware decoding, cache final_url, explicit JSON extends, acceptance self-check | ✅ done |
 
 ## Quick start
 
