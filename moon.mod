@@ -22,4 +22,5 @@ import {
   "moonbit-community/html@0.2.3",
   "moonbit-community/cmark@0.4.12",
   "colmugx/mcp@0.18.2",
+  "LL728/moon_encoding@0.2.0",
 }

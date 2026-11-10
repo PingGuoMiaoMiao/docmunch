@@ -12,9 +12,13 @@ pub fn cache_key(String) -> String
 
 pub fn cache_meta_path(String, String) -> String
 
+pub fn charset_label(String, Bytes) -> String
+
 pub async fn check_target(Target, FetchOptions) -> Unit raise FetchError
 
 pub fn content_type_allowed(String) -> Bool
+
+pub fn decode_body(Bytes, String) -> (String, Bool)
 
 pub fn default_fetch_options() -> FetchOptions
 
@@ -83,6 +87,7 @@ pub(all) struct CachedEntry {
   body : Bytes
   status : String
   content_type : String
+  final_url : String
 }
 
 pub(all) struct FetchOptions {

@@ -27,6 +27,7 @@ pub(all) struct CachedEntry {
   body : Bytes
   status : String
   content_type : String
+  final_url : String
 }
 
 ///|
@@ -128,5 +129,6 @@ pub async fn load_cached(
     body,
     status: meta_field(meta, "status").unwrap_or("200"),
     content_type: meta_field(meta, "content_type").unwrap_or(""),
+    final_url: meta_field(meta, "final_url").unwrap_or(""),
   })
 }

@@ -77,19 +77,6 @@ fn is_redirect(status : Int32) -> Bool {
 }
 
 ///|
-/// Heuristic: a page that declares a non-UTF-8 charset is decoded lossily and
-/// flagged rather than silently mangled (full transcoding is out of scope for v1).
-fn declares_non_utf8(html : String) -> Bool {
-  let head = if html.length() > 4096 { html[0:4096].to_owned() } else { html }
-  let low = head.to_lower()
-  if str_contains(low, "charset=") {
-    !str_contains(low, "charset=utf-8") && !str_contains(low, "charset=\"utf-8")
-  } else {
-    false
-  }
-}
-
-///|
 async fn fetch_hop(
   current : Target,
   requested : String,
@@ -151,7 +138,7 @@ async fn fetch_hop(
   }
   client.close()
   let bytes = buf.to_bytes()
-  let body = @utf8.decode_lossy(bytes)
+  let (body, charset_warning) = decode_body(bytes, content_type)
   let platform = detect(current, body)
   let key = cache_key(requested)
   let cache_path = if opts.use_cache {
@@ -172,7 +159,7 @@ async fn fetch_hop(
     content_type,
     bytes_len: total,
     body,
-    charset_warning: declares_non_utf8(body),
+    charset_warning,
     platform,
     cache_path,
     from_cache: false,
@@ -206,16 +193,18 @@ async fn fetch_from_cache(target : Target, opts : FetchOptions) -> FetchResult? 
       if e.body.length() > opts.max_bytes {
         None
       } else {
-        let body = @utf8.decode_lossy(e.body)
+        let (body, charset_warning) = decode_body(e.body, e.content_type)
+        let final_url = if e.final_url != "" { e.final_url } else { requested }
+        let final_target = Target::parse(final_url) catch { _ => target }
         Some({
           requested_url: requested,
-          final_url: requested,
+          final_url,
           status: parse_int_or(e.status, 200),
           content_type: e.content_type,
           bytes_len: e.body.length(),
           body,
-          charset_warning: declares_non_utf8(body),
-          platform: detect(target, body),
+          charset_warning,
+          platform: detect(final_target, body),
           cache_path: cache_bin_path(opts.cache_root, key),
           from_cache: true,
         })

@@ -134,3 +134,15 @@ pub fn Section::byte_len(self : Section) -> Int32 {
 pub fn Section::is_root(self : Section) -> Bool {
   self.level == 0
 }
+
+///|
+pub extend Section with ToJson::{to_json}
+
+///|
+pub extend Section with FromJson::{from_json}
+
+///|
+pub extend DocIndex with ToJson::{to_json}
+
+///|
+pub extend DocIndex with FromJson::{from_json}

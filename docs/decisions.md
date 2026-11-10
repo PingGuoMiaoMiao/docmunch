@@ -337,3 +337,25 @@
 - **决策**：`build_server` 里创建一个 `Array[Mutex]`（数组是引用类型，保证闭包共享同一把锁），`index_url`/`index_local`/`delete_index` 三个写路径 `acquire` + `defer release`。
 - **后果**：并发索引正确；读路径（search/get_section）不加锁，保持并发。锁粒度是"整个索引写操作"，对单机场景足够。
 - **被否**：每个 repo 一把锁 —— 需要引用计数与生命周期管理，收益不足以抵消复杂度。
+---
+
+## D45 — 响应体按 WHATWG charset 解码，不再一律 lossy UTF-8
+
+- **背景**：P9 审计遗留：GBK/Big5/Shift_JIS 页面被 `decode_lossy` 当 UTF-8 解，索引里存的是乱码，`charset_warning` 只是贴了个标签。
+- **决策**：新增依赖 `LL728/moon_encoding@0.2.0`（WHATWG Encoding Standard 全 40 种编码，Apache-2.0）；从 `Content-Type` 的 `charset=`（支持引号）或前 1 KiB 的 `<meta charset>` 嗅探标签，命中非 UTF-8 时真正转码；标签未知/转码失败才回退 lossy 并置 `charset_warning=true`。
+- **后果**：中文 GBK 站点可正确入库；新增依赖与 4 个单测（GBK 头、meta 嗅探、未知标签、带引号标签）。
+- **被否**：只检测不转码 —— 等于把乱码写进索引；自写 GBK 表 —— 数据量大且易错。
+
+## D46 — 缓存命中保留真实 final_url
+
+- **背景**：缓存 meta 里存了 `final_url`，但命中时 `FetchResult.final_url` 回填的是请求 URL，重定向过的页面从缓存读时平台指纹与路径会偏。
+- **决策**：`CachedEntry` 增加 `final_url`；命中时优先用 meta 值，并据此重建 `Target` 计算平台指纹。
+- **后果**：缓存命中的结果与网络路径一致；`from_cache` 语义不变。
+- **被否**：缓存只存 body —— 无法还原重定向后的身份。
+
+## D47 — JSON 派生改为显式 `extend`，消除隐式方法提升
+
+- **背景**：`derive(ToJson, FromJson)` 会触发 `implicit_impl_as_method` 警告，工具链明确指出该行为未来会移除；升级后会直接编译失败。
+- **决策**：保留 derive，同时显式声明 `pub extend Section with ToJson::{to_json}` 等 4 条 extend。
+- **后果**：`moon check` 的 derive 警告从 4 条降到 0；行为不变（73 个测试含索引 JSON 往返）。
+- **被否**：手写 `to_json/from_json` —— 与派生逻辑重复，字段一改就漂移。

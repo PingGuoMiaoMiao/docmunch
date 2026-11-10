@@ -27,6 +27,8 @@ pub(all) struct DocIndex {
   sections : Array[Section]
   index_version : Int32
 } derive(ToJson, @json.FromJson)
+pub fn DocIndex::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn DocIndex::to_json(Self) -> Json
 
 pub(all) struct Section {
   id : String
@@ -41,7 +43,9 @@ pub(all) struct Section {
   keywords : Array[String]
 } derive(ToJson, @json.FromJson)
 pub fn Section::byte_len(Self) -> Int32
+pub fn Section::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Section::is_root(Self) -> Bool
+pub fn Section::to_json(Self) -> Json
 
 // Type aliases
 

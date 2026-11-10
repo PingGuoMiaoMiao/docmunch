@@ -80,6 +80,8 @@ moon run cmd/main --target native -- mcp
 | 极简 HTML 抽取死循环 | 候选容器直接挂 body 时，折叠/unwrap 循环对 document 节点空转 | 父节点为 body 时直接返回，两个循环都以 document 根为边界（D42） |
 | HTTP MCP 并发写索引 | 并发 `index_*` 读改写互相覆盖（实测 3/3 丢文档） | 单把共享 Mutex 串行化三个写工具，e2e 增加并发断言（D44） |
 | DNS rebinding | 单次解析后被客户端二次解析绕过 | 请求前二次解析拦截 + 文档标注为缓解，未声称修复（D43） |
+| 非 UTF-8 页面乱码 | GBK/Big5 被当 UTF-8 lossy 解码 | 按 WHATWG label 真转码（`moon_encoding`），未知标签才回退并置 warning（D45） |
+| 缓存命中丢 final_url | 重定向后的页面从缓存读时身份变成请求 URL | 缓存 meta 的 final_url 参与结果与平台指纹（D46） |
 | stderr / stdout 混用 | 错误与正常结果都走 stdout | 诊断走 `fail()` → stderr，stdout 只留数据 |
 | 编译与测试卫生 | MCP SDK 与本地包同名告警；fetch 测试端口写死 | SDK 别名 `@mcpsdk`；fetch 测试改用动态端口 |
 

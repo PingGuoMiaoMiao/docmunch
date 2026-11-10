@@ -10,4 +10,5 @@ import {
   "moonbitlang/core/env",
   "tonyfettes/url",
   "gmlewis/sha256",
+  "LL728/moon_encoding",
 }
