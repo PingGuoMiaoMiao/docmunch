@@ -22,6 +22,8 @@
 
 ## 2. 赛事验收六条 → 证据
 
+> 同一套规则已有脚本实现 `tools/acceptance.py`（也是 `moonbit-hackathon-acceptance` skill 的副本），一条命令产出 PASS/WARN/FAIL 表；下表是人工可读的证据版本。
+
 | 验收项 | 本项目对应证据 |
 | --- | --- |
 | MoonBit 为主实现语言 | 全部源码为 `.mbt`（8 个包）；仅有 Python/Node 的**测试与校验脚本**，不参与运行时 |

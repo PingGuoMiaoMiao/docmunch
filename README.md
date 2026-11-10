@@ -75,6 +75,19 @@ for more when a section was cut.
 Security default: loopback/RFC1918/link-local targets are refused unless
 `--allow-private` is passed (the MCP server runs on the user's machine).
 
+## Pre-submission acceptance check
+
+`tools/acceptance.py` is the script behind the `moonbit-hackathon-acceptance`
+skill: it checks MoonBit-primary code, commit history, build/tests, README,
+licences, AI explainability, demo entry and test density.
+
+```sh
+python tools/acceptance.py --since 2026-11-01   # round start date
+```
+
+Exit code 0 means no FAIL. WARN rows are "a human should look", FAIL rows must
+be fixed before submitting.
+
 ## Layout
 
 ```

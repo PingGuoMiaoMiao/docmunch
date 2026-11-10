@@ -5,49 +5,49 @@
 
 ///|
 fn arg_str(args : Json, key : String) -> String {
-  match args.as_object() {
-    Some(obj) =>
+  match args {
+    Json::Object(obj) =>
       match obj.get(key) {
         Some(Json::String(v)) => v
         _ => ""
       }
-    None => ""
+    _ => ""
   }
 }
 
 ///|
 fn arg_opt_str(args : Json, key : String) -> String? {
-  match args.as_object() {
-    Some(obj) =>
+  match args {
+    Json::Object(obj) =>
       match obj.get(key) {
         Some(Json::String(v)) => Some(v)
         _ => None
       }
-    None => None
+    _ => None
   }
 }
 
 ///|
 fn arg_int(args : Json, key : String, fallback : Int32) -> Int32 {
-  match args.as_object() {
-    Some(obj) =>
+  match args {
+    Json::Object(obj) =>
       match obj.get(key) {
         Some(Json::Number(v, ..)) => v.to_int()
         _ => fallback
       }
-    None => fallback
+    _ => fallback
   }
 }
 
 ///|
 fn arg_bool(args : Json, key : String) -> Bool {
-  match args.as_object() {
-    Some(obj) =>
+  match args {
+    Json::Object(obj) =>
       match obj.get(key) {
         Some(Json::True) => true
         _ => false
       }
-    None => false
+    _ => false
   }
 }
 
@@ -403,7 +403,9 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       index_gate[0].acquire()
       defer index_gate[0].release()
       let repo = arg_str(args, "repo")
-      @index.delete_repo(root, repo)
+      @index.delete_repo(root, repo) catch {
+        e => return failure("delete failed: \{e.to_string()}")
+      }
       Ok(text_result("{\"deleted\":\{@http.json_escape(repo)}}"))
     },
   )

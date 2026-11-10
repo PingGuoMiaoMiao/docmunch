@@ -155,7 +155,7 @@ fn code_language(doc : @html.Document, id : Int32) -> String {
       (c >= 48 && c <= 57) ||
       c == 45 ||
       c == 95
-    if not(is_word) {
+    if !is_word {
       break
     }
     sb.write_char(Int32::unsafe_to_char(c))
@@ -214,7 +214,7 @@ fn block_children(doc : @html.Document, id : Int32) -> String {
   let run = StringBuilder::StringBuilder()
   for child in doc.get_children(id) {
     let tag = @extract.tag_name(doc, child)
-    if tag == "" || not(is_block_tag(tag)) {
+    if tag == "" || !is_block_tag(tag) {
       // Inline run: keep consecutive inline nodes inside one paragraph.
       run.write_string(inline_of(doc, child))
       continue

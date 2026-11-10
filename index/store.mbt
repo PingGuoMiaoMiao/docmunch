@@ -48,11 +48,38 @@ pub fn repo_key(repo : String) -> String {
     }
   }
   let sanitized = sb.to_string()
-  if sanitized == repo {
-    sanitized
-  } else {
-    sanitized + "-" + sha8(repo)
+  let base = if sanitized == "" { "repo" } else { sanitized }
+  // Windows strips trailing dots/spaces and is case-insensitive, so these names
+  // would collide with a sibling repo; reserved device names cannot be created
+  // at all.
+  let mut needs_hash = sanitized != repo
+  if sanitized != "" {
+    let last = sanitized[sanitized.length() - 1]
+    if last == '.' || last == ' ' {
+      needs_hash = true
+    }
   }
+  if is_reserved_windows_name(sanitized) {
+    needs_hash = true
+  }
+  if needs_hash {
+    base + "-" + sha8(repo)
+  } else {
+    base
+  }
+}
+
+///|
+fn is_reserved_windows_name(name : String) -> Bool {
+  let upper = name.to_upper()
+  if upper == "CON" || upper == "PRN" || upper == "AUX" || upper == "NUL" {
+    return true
+  }
+  if upper.length() == 4 && (upper.has_prefix("COM") || upper.has_prefix("LPT")) {
+    let n = upper[3]
+    return n >= '1' && n <= '9'
+  }
+  false
 }
 
 ///|
@@ -105,7 +132,7 @@ async fn read_repo_name(path : String) -> String? {
 ///|
 pub async fn load_index(root : String, repo : String) -> @core.DocIndex? {
   let path = index_file_path(root, repo)
-  if not(@fs.exists(path)) {
+  if !@fs.exists(path) {
     return None
   }
   let text = @fs.read_file(path).text() catch { _ => return None }
@@ -206,6 +233,6 @@ pub async fn read_section_text(
   }
   let buf = FixedArray::make(len, Byte::default())
   let read = file.read_at(buf, position=section.byte_start.to_int64(), len~)
-  let bytes = Bytes::from_fixedarray(buf, len=read)
+  let bytes = Bytes::from_array(buf[:read])
   @utf8.decode_lossy(bytes)
 }

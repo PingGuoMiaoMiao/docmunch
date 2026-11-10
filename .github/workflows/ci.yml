@@ -23,8 +23,8 @@ jobs:
       - name: Toolchain versions
         run: moon version --all
 
-      - name: Format (advisory)
-        run: moon fmt --check || true
+      - name: Format
+        run: moon fmt --check
 
       - name: Unit tests
         run: moon test
@@ -40,6 +40,9 @@ jobs:
             moon run cmd/main --target native -- extract "$f" > "tools/oracle/out-moonbit/$name.json"
           done
           python tools/compare.py
+
+      - name: Acceptance self-check
+        run: python tools/acceptance.py --skip-build
 
       - name: Markdown goldens
         run: python tools/markdown_golden.py

@@ -127,3 +127,29 @@ async test "dot-dot repo name never escapes the root" {
   assert_eq(repos.length(), 1)
   assert_eq(repos[0], "..")
 }
+
+///|
+async test "windows-hostile repo names get distinct directories" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  // "foo." collapses to "foo" on Windows; "Repo"/"repo" collide case-insensitively.
+  ignore(build_index(root, "foo", "a.md", sample_md()))
+  ignore(build_index(root, "foo.", "a.md", sample_md()))
+  ignore(build_index(root, "Repo", "a.md", sample_md()))
+  let repos = list_repos(root)
+  assert_eq(repos.length(), 3)
+  assert_true(repos.contains("foo"))
+  assert_true(repos.contains("foo."))
+  assert_true(repos.contains("Repo"))
+}
+
+///|
+async test "reserved device names still work" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  ignore(build_index(root, "CON", "a.md", sample_md()))
+  let repos = list_repos(root)
+  assert_true(repos.contains("CON"))
+  delete_repo(root, "CON")
+  assert_eq(list_repos(root).length(), 0)
+}
