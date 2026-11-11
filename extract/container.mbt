@@ -1,4 +1,5 @@
 // Container selection: trim the tree down to the winning article block.
+
 ///|
 pub fn extract_main(doc : @html.Document) -> Int32 {
   let root = doc.body_element

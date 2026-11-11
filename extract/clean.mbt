@@ -1,4 +1,5 @@
 // Unlikely-candidate filtering: drop scripts, navigation, ads and link-heavy blocks.
+
 ///|
 fn is_junk_tag(tag : String) -> Bool {
   tag == "script" ||
