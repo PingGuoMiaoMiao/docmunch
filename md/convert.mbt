@@ -214,25 +214,6 @@ fn block_children(doc : @html.Document, id : Int32) -> String {
 }
 
 ///|
-fn split_lines_local(text : String) -> Array[String] {
-  let out : Array[String] = []
-  let sb = StringBuilder::StringBuilder()
-  for c in text {
-    if c == '\n' {
-      out.push(sb.to_string())
-      sb.reset()
-    } else if c != '\r' {
-      sb.write_char(c)
-    }
-  }
-  let tail = sb.to_string()
-  if tail != "" {
-    out.push(tail)
-  }
-  out
-}
-
-///|
 fn list_of(doc : @html.Document, id : Int32, ordered : Bool) -> String {
   let sb = StringBuilder::StringBuilder()
   let mut index = 1
@@ -249,7 +230,7 @@ fn list_of(doc : @html.Document, id : Int32, ordered : Bool) -> String {
       body.trim().to_owned()
     }
     let mut first = true
-    for line in split_lines_local(body) {
+    for line in @text.split_lines(body) {
       if first {
         sb.write_string(marker)
         first = false
@@ -333,7 +314,7 @@ fn table_of(doc : @html.Document, id : Int32) -> String {
 ///|
 fn prefix_lines(text : String, prefix : String) -> String {
   let sb = StringBuilder::StringBuilder()
-  for line in split_lines_local(text.trim().to_owned()) {
+  for line in @text.split_lines(text.trim().to_owned()) {
     sb.write_string(prefix)
     sb.write_string(line.trim_end().to_owned())
     sb.write_char('\n')
@@ -443,7 +424,7 @@ fn squash_blank_lines(s : String) -> String {
   let out : Array[String] = []
   let mut fence = ""
   let mut pending_blanks = 0
-  for line in split_lines_local(s) {
+  for line in @text.split_lines(s) {
     let marker = line_fence_marker(line)
     if fence != "" {
       // Inside a fence every line, including blank ones, is preserved.

@@ -54,23 +54,3 @@ pub fn parse_int64_or(input : String, fallback : Int64) -> Int64 {
     value
   }
 }
-
-///|
-/// Split on `\n`, dropping a trailing `\r`. Empty input yields an empty array.
-pub fn split_lines(text : String) -> Array[String] {
-  let out : Array[String] = []
-  let sb = StringBuilder::StringBuilder()
-  for c in text {
-    if c == '\n' {
-      out.push(sb.to_string())
-      sb.reset()
-    } else if c != '\r' {
-      sb.write_char(c)
-    }
-  }
-  let tail = sb.to_string()
-  if tail != "" {
-    out.push(tail)
-  }
-  out
-}

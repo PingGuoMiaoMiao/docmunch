@@ -185,7 +185,7 @@ async fn cmd_smoke(path : String) -> Unit {
     cache_ttl_ms: 86_400_000,
     max_retries: 2,
   }
-  for line in @http.split_lines(text) {
+  for line in @text.split_lines(text) {
     let url = line.trim().to_owned()
     if url == "" || url.has_prefix("#") {
       continue

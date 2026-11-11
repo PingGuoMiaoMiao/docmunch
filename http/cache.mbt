@@ -75,7 +75,7 @@ pub async fn save_entry(
 /// Pull one `key=value` field out of a metadata file. Only the first `=`
 /// separates the key from the value, so a value may contain `=`.
 fn meta_field(meta : String, key : String) -> String? {
-  for line in split_lines(meta) {
+  for line in @text.split_lines(meta) {
     let cs = chars_of(line)
     let eq = index_of_char(cs, '=')
     if eq > 0 && substring_chars(cs, 0, eq) == key {

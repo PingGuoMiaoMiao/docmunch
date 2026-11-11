@@ -8,6 +8,7 @@ import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
+  "pingguomiaomiao/docmunch/core/text",
   "tonyfettes/url",
   "gmlewis/sha256",
   "LL728/moon_encoding",
