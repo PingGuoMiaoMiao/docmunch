@@ -5,32 +5,6 @@
 // feeding it back through moonbit-community/cmark in tests.
 
 ///|
-fn find_sub(hay : String, needle : String) -> Int32 {
-  let n = hay.length()
-  let m = needle.length()
-  if m == 0 || m > n {
-    return -1
-  }
-  let mut i = 0
-  while i + m <= n {
-    let mut j = 0
-    let mut same = true
-    while j < m {
-      if hay[i + j] != needle[j] {
-        same = false
-        break
-      }
-      j = j + 1
-    }
-    if same {
-      return i
-    }
-    i = i + 1
-  }
-  -1
-}
-
-///|
 fn is_block_tag(tag : String) -> Bool {
   tag == "p" ||
   tag == "div" ||
@@ -142,7 +116,7 @@ fn raw_text(doc : @html.Document, id : Int32) -> String {
 fn code_language(doc : @html.Document, id : Int32) -> String {
   let ci = @extract.class_and_id(doc, id)
   let marker = "language-"
-  let at = find_sub(ci, marker)
+  let at = @text.find_sub(ci, marker)
   if at < 0 {
     return ""
   }

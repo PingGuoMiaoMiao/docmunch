@@ -109,45 +109,19 @@ pub fn text_lengths(doc : @html.Document, root : Int32) -> Map[Int32, Int32] {
 }
 
 ///|
-fn find_sub(hay : String, needle : String, from : Int32) -> Int32 {
-  let n = hay.length()
-  let m = needle.length()
-  if m == 0 || m > n {
-    return -1
-  }
-  let mut i = from
-  while i + m <= n {
-    let mut j = 0
-    let mut same = true
-    while j < m {
-      if hay[i + j] != needle[j] {
-        same = false
-        break
-      }
-      j = j + 1
-    }
-    if same {
-      return i
-    }
-    i = i + 1
-  }
-  -1
-}
-
-///|
 /// Inner HTML of `<body>` from the serialized document (wrapper `<body>` and
 /// `<head>` are dropped; the parser always emits them).
 pub fn body_inner_html(doc : @html.Document) -> String {
   let html = doc.to_html()
-  let body_at = find_sub(html, "<body", 0)
+  let body_at = @text.find_sub(html, "<body")
   if body_at < 0 {
     return html
   }
-  let gt = find_sub(html, ">", body_at)
+  let gt = @text.find_sub(html, ">", from=body_at)
   if gt < 0 {
     return html
   }
-  let end = find_sub(html, "</body>", gt + 1)
+  let end = @text.find_sub(html, "</body>", from=gt + 1)
   if end < 0 {
     return html
   }
