@@ -4,9 +4,13 @@ package "pingguomiaomiao/docmunch/core/text"
 // Values
 pub fn find_sub(String, String, from? : Int32) -> Int32
 
+pub fn json_escape(String) -> String
+
 pub fn rfind_sub(String, String) -> Int32
 
 pub fn split_lines(String) -> Array[String]
+
+pub fn truncate_utf8(String, Int32) -> String
 
 // Errors
 
