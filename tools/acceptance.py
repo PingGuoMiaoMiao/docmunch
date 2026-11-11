@@ -66,12 +66,32 @@ def read_text(path: Path, limit=20000) -> str:
         return ""
 
 
+def foreign_dirs(root: Path) -> set:
+    """Nested project roots: a subdirectory with its own .git or moon.mod.
+
+    Workspaces often contain an unrelated checkout; counting its files would
+    make the language ratio meaningless.
+    """
+    skip = set()
+    for marker in root.rglob("*"):
+        if not marker.is_dir():
+            continue
+        if marker == root:
+            continue
+        if (marker / ".git").exists() or (marker / "moon.mod").exists():
+            skip.add(marker)
+    return skip
+
+
 def walk_sources(root: Path):
     mbt_files, mbt_lines, other_files, other_lines = 0, 0, 0, 0
+    foreign = foreign_dirs(root)
     for path in root.rglob("*"):
         if not path.is_file():
             continue
         if any(part in SKIP_DIRS for part in path.parts):
+            continue
+        if any(parent in foreign for parent in path.parents):
             continue
         ext = path.suffix.lower()
         if ext == ".mbt":
@@ -226,9 +246,12 @@ def check_demo(root: Path):
 def check_assertions(root: Path):
     files = 0
     assertions = 0
+    foreign = foreign_dirs(root)
     for pattern in ("*_test.mbt", "*_wbtest.mbt"):
         for path in root.rglob(pattern):
             if any(part in SKIP_DIRS for part in path.parts):
+                continue
+            if any(parent in foreign for parent in path.parents):
                 continue
             files += 1
             text = read_text(path, 200000)
