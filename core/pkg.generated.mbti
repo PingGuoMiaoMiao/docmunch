@@ -21,15 +21,17 @@ pub fn utf8_len_of_char(Char) -> Int32
 // Errors
 
 // Types and methods
+#derive(@json.FromJson, @json.ToJson)
 pub(all) struct DocIndex {
   repo : String
   doc_paths : Array[String]
   sections : Array[Section]
   index_version : Int32
-} derive(ToJson, @json.FromJson)
-pub fn DocIndex::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
-pub fn DocIndex::to_json(Self) -> Json
+}
+pub fn DocIndex::from_json(@json.Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn DocIndex::to_json(Self) -> @json.Json
 
+#derive(@json.FromJson, @json.ToJson)
 pub(all) struct Section {
   id : String
   repo : String
@@ -41,11 +43,11 @@ pub(all) struct Section {
   parent_id : String
   content_hash : String
   keywords : Array[String]
-} derive(ToJson, @json.FromJson)
+}
 pub fn Section::byte_len(Self) -> Int32
-pub fn Section::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Section::from_json(@json.Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
 pub fn Section::is_root(Self) -> Bool
-pub fn Section::to_json(Self) -> Json
+pub fn Section::to_json(Self) -> @json.Json
 
 // Type aliases
 

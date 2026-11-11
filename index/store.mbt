@@ -113,9 +113,10 @@ fn repo_meta_path(root : String, repo : String) -> String {
 
 ///|
 /// Shape of `<repo-dir>/repo.json`: the label the user originally supplied.
+#derive(ToJson, FromJson)
 priv struct RepoMeta {
   name : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// Original label stored in `repo.json`, or `None` for pre-repo.json indexes.

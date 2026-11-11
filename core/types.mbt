@@ -7,6 +7,7 @@
 // See docs/decisions.md (D7, D8) for why the id scheme mirrors jdocmunch.
 
 ///|
+#derive(ToJson, FromJson)
 pub(all) struct Section {
   id : String
   repo : String
@@ -18,15 +19,16 @@ pub(all) struct Section {
   parent_id : String
   content_hash : String
   keywords : Array[String]
-} derive(ToJson, FromJson)
+}
 
 ///|
+#derive(ToJson, FromJson)
 pub(all) struct DocIndex {
   repo : String
   doc_paths : Array[String]
   sections : Array[Section]
   index_version : Int32
-} derive(ToJson, FromJson)
+}
 
 ///|
 pub let index_version : Int32 = 2
