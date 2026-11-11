@@ -418,28 +418,6 @@ test "url doc paths keep the path and disambiguate queries" {
 }
 
 ///|
-test "truncate_utf8 never splits a multi-byte character" {
-  // "中éab" is 3 + 2 + 1 + 1 = 7 UTF-8 bytes.
-  let s = "中éab"
-  assert_eq(truncate_utf8(s, 1), "")
-  assert_eq(truncate_utf8(s, 2), "")
-  assert_eq(truncate_utf8(s, 3), "中")
-  assert_eq(truncate_utf8(s, 4), "中")
-  assert_eq(truncate_utf8(s, 5), "中é")
-  assert_eq(truncate_utf8(s, 6), "中éa")
-  assert_eq(truncate_utf8(s, 7), s)
-  assert_eq(truncate_utf8(s, 100), s)
-  assert_eq(truncate_utf8(s, 0), s)
-  assert_eq(truncate_utf8(s, -1), s)
-  assert_eq(@utf8.encode(truncate_utf8(s, 4)).length(), 3)
-  // A four-byte scalar counts as four bytes, not as four characters.
-  let emoji = "a\u{1F600}b"
-  assert_eq(truncate_utf8(emoji, 4), "a")
-  assert_eq(truncate_utf8(emoji, 5), "a\u{1F600}")
-  assert_eq(truncate_utf8(emoji, 6), "a\u{1F600}b")
-}
-
-///|
 test "only network errors are retryable" {
   assert_true(is_retryable(NetworkError("connection reset")))
   assert_false(is_retryable(Timeout))

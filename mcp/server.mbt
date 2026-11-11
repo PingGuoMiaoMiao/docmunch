@@ -87,14 +87,14 @@ fn failure(msg : String) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
 ///|
 fn sections_json(repo : String, sections : Array[@core.Section]) -> String {
   let sb = StringBuilder::StringBuilder()
-  sb.write_string("{\"repo\":\{@http.json_escape(repo)},\"sections\":[")
+  sb.write_string("{\"repo\":\{@text.json_escape(repo)},\"sections\":[")
   for i = 0; i < sections.length(); i = i + 1 {
     if i > 0 {
       sb.write_char(',')
     }
     let s = sections[i]
     sb.write_string(
-      "{\"id\":\{@http.json_escape(s.id)},\"level\":\{s.level},\"title\":\{@http.json_escape(s.title)},\"path\":\{@http.json_escape(s.doc_path)},\"bytes\":[\{s.byte_start},\{s.byte_end}],\"parent\":\{@http.json_escape(s.parent_id)}}",
+      "{\"id\":\{@text.json_escape(s.id)},\"level\":\{s.level},\"title\":\{@text.json_escape(s.title)},\"path\":\{@text.json_escape(s.doc_path)},\"bytes\":[\{s.byte_start},\{s.byte_end}],\"parent\":\{@text.json_escape(s.parent_id)}}",
     )
   }
   sb.write_string("]}")
@@ -119,7 +119,7 @@ async fn index_inputs(
     }
     return Ok(
       text_result(
-        "{\"repo\":\{@http.json_escape(repo)},\"doc\":\{@http.json_escape(doc_path)},\"sections\":\{index.sections.length()}}",
+        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()}}",
       ),
     )
   }
@@ -141,7 +141,7 @@ async fn index_inputs(
   }
   Ok(
     text_result(
-      "{\"repo\":\{@http.json_escape(repo)},\"doc\":\{@http.json_escape(doc_path)},\"title\":\{@http.json_escape(ex.title)},\"sections\":\{index.sections.length()}}",
+      "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"title\":\{@text.json_escape(ex.title)},\"sections\":\{index.sections.length()}}",
     ),
   )
 }
@@ -169,7 +169,7 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
         if i > 0 {
           sb.write_char(',')
         }
-        sb.write_string(@http.json_escape(repos[i]))
+        sb.write_string(@text.json_escape(repos[i]))
       }
       sb.write_string("]}")
       Ok(text_result(sb.to_string()))
@@ -279,11 +279,11 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       // make a matching section look corrupt.
       let max_bytes = arg_int(args, "max_bytes", 8000)
       let total_bytes : Int32 = @utf8.encode(text).length()
-      let markdown = @http.truncate_utf8(text, max_bytes)
+      let markdown = @text.truncate_utf8(text, max_bytes)
       let truncated = max_bytes > 0 && total_bytes > max_bytes
       Ok(
         text_result(
-          "{\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@http.json_escape(markdown)}}",
+          "{\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@text.json_escape(markdown)}}",
         ),
       )
     },
@@ -324,7 +324,7 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       }
       let max_bytes = arg_int(args, "max_bytes", 8000)
       let total_bytes : Int32 = @utf8.encode(text).length()
-      let markdown = @http.truncate_utf8(text, max_bytes)
+      let markdown = @text.truncate_utf8(text, max_bytes)
       let truncated = max_bytes > 0 && total_bytes > max_bytes
       let ancestors = @index.ancestors_of(index, section)
       let children = @index.children_of(index, section)
@@ -336,7 +336,7 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
         }
         let a = ancestors[i]
         sb.write_string(
-          "{\"id\":\{@http.json_escape(a.id)},\"level\":\{a.level},\"title\":\{@http.json_escape(a.title)}}",
+          "{\"id\":\{@text.json_escape(a.id)},\"level\":\{a.level},\"title\":\{@text.json_escape(a.title)}}",
         )
       }
       sb.write_string("],\"children\":[")
@@ -346,11 +346,11 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
         }
         let c = children[i]
         sb.write_string(
-          "{\"id\":\{@http.json_escape(c.id)},\"level\":\{c.level},\"title\":\{@http.json_escape(c.title)}}",
+          "{\"id\":\{@text.json_escape(c.id)},\"level\":\{c.level},\"title\":\{@text.json_escape(c.title)}}",
         )
       }
       sb.write_string(
-        "],\"section\":{\"id\":\{@http.json_escape(section.id)},\"title\":\{@http.json_escape(section.title)},\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@http.json_escape(markdown)}}}",
+        "],\"section\":{\"id\":\{@text.json_escape(section.id)},\"title\":\{@text.json_escape(section.title)},\"verified\":\{ok},\"truncated\":\{truncated},\"total_bytes\":\{total_bytes},\"markdown\":\{@text.json_escape(markdown)}}}",
       )
       Ok(text_result(sb.to_string()))
     },
@@ -387,7 +387,7 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
         }
         let h = hits[i]
         sb.write_string(
-          "{\"id\":\{@http.json_escape(h.id)},\"level\":\{h.level},\"title\":\{@http.json_escape(h.title)},\"score\":\{h.score}}",
+          "{\"id\":\{@text.json_escape(h.id)},\"level\":\{h.level},\"title\":\{@text.json_escape(h.title)},\"score\":\{h.score}}",
         )
       }
       sb.write_string("]}")
@@ -406,7 +406,7 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
       @index.delete_repo(root, repo) catch {
         e => return failure("delete failed: \{e.to_string()}")
       }
-      Ok(text_result("{\"deleted\":\{@http.json_escape(repo)}}"))
+      Ok(text_result("{\"deleted\":\{@text.json_escape(repo)}}"))
     },
   )
 

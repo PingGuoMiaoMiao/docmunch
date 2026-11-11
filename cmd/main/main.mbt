@@ -151,7 +151,7 @@ async fn cmd_extract(input : String, args : Array[String]) -> Unit {
   }
   let ex = @extract.extract(source, input)
   println(
-    "{\"title\":\{@http.json_escape(ex.title)},\"byline\":\{@http.json_escape(ex.byline)},\"site_name\":\{@http.json_escape(ex.site_name)},\"lang\":\{@http.json_escape(ex.lang)},\"length\":\{ex.length},\"html_len\":\{ex.html.length()},\"text\":\{@http.json_escape(ex.text)}}",
+    "{\"title\":\{@text.json_escape(ex.title)},\"byline\":\{@text.json_escape(ex.byline)},\"site_name\":\{@text.json_escape(ex.site_name)},\"lang\":\{@text.json_escape(ex.lang)},\"length\":\{ex.length},\"html_len\":\{ex.html.length()},\"text\":\{@text.json_escape(ex.text)}}",
   )
   match option_value(args, "--out-html") {
     Some(path) =>

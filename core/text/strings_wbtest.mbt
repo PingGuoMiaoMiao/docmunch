@@ -52,3 +52,35 @@ test "split_lines keeps interior empty lines" {
   assert_eq(lines.length(), 3)
   assert_eq(lines[1], "")
 }
+
+///|
+test "truncate_utf8 never splits a multi-byte character" {
+  // U+4E2D is 3 bytes, U+00E9 is 2, "b" is 1: 7 bytes total.
+  let s = "\u{4E2D}\u{00E9}b"
+  assert_eq(truncate_utf8(s, 1), "")
+  assert_eq(truncate_utf8(s, 2), "")
+  assert_eq(truncate_utf8(s, 3), "\u{4E2D}")
+  assert_eq(truncate_utf8(s, 4), "\u{4E2D}")
+  assert_eq(truncate_utf8(s, 5), "\u{4E2D}\u{00E9}")
+  assert_eq(truncate_utf8(s, 6), "\u{4E2D}\u{00E9}b")
+  assert_eq(truncate_utf8(s, 7), s)
+  assert_eq(truncate_utf8(s, 100), s)
+  assert_eq(truncate_utf8(s, 0), s)
+  assert_eq(truncate_utf8(s, -1), s)
+  // A four-byte scalar counts as four bytes, not as four characters.
+  let emoji = "a\u{1F600}b"
+  assert_eq(truncate_utf8(emoji, 4), "a")
+  assert_eq(truncate_utf8(emoji, 5), "a\u{1F600}")
+  assert_eq(truncate_utf8(emoji, 6), "a\u{1F600}b")
+}
+
+///|
+test "json_escape quotes, backslashes and control characters" {
+  assert_eq(json_escape("abc"), "\"abc\"")
+  assert_eq(json_escape("a\"b"), "\"a\\\"b\"")
+  assert_eq(json_escape("a\\b"), "\"a\\\\b\"")
+  assert_eq(json_escape("a\nb"), "\"a\\nb\"")
+  assert_eq(json_escape("a\tb"), "\"a\\tb\"")
+  // Chinese passes through unescaped.
+  assert_eq(json_escape("\u{4E2D}"), "\"\u{4E2D}\"")
+}

@@ -5,6 +5,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/async/fs",
   "pingguomiaomiao/docmunch/core",
+  "pingguomiaomiao/docmunch/core/text",
   "pingguomiaomiao/docmunch/http",
   "pingguomiaomiao/docmunch/extract",
   "pingguomiaomiao/docmunch/md",
