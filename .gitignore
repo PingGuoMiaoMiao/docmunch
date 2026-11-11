@@ -23,3 +23,6 @@ tools/oracle/out-moonbit/
 
 # AgentTeams staging area
 .agent-teams/
+
+# Unrelated project that lives in this workspace; never commit it.
+_lunarrender/
