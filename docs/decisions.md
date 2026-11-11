@@ -359,3 +359,18 @@
 - **决策**：保留 derive，同时显式声明 `pub extend Section with ToJson::{to_json}` 等 4 条 extend。
 - **后果**：`moon check` 的 derive 警告从 4 条降到 0；行为不变（73 个测试含索引 JSON 往返）。
 - **被否**：手写 `to_json/from_json` —— 与派生逻辑重复，字段一改就漂移。
+---
+
+## D48 — 纯文本工具抽成零依赖包 `core/text`
+
+- **背景**：`find_sub` / `split_lines` / `json_escape` / `truncate_utf8` 原本散在 `http` 里。`http` 同时依赖 `async`/`url`/`sha256`/`moon_encoding`，所以只想要一个字符串函数的包（`md`、`mcp`）宁可自己再实现一遍，也不愿把整套传输栈拖进来——于是出现 3 处重复实现。
+- **决策**：新建零依赖包 `core/text`，只放纯函数（子串查找、分行、JSON 转义、UTF-8 安全截断），`extract` / `md` / `index` / `mcp` / `cmd` 与 `http` 本身共用它。
+- **后果**：删掉 3 份重复扫描；`mcp` 对 `http` 的依赖只剩真正的传输需求；`core/text` 有 9 个独立单测。
+- **被否**：让 `md` 直接依赖 `http` —— 会把 async 运行时、TLS、URL 解析拖进一个纯转换包，编译产物与理解成本都上升。
+
+## D49 — MCP 工具改为"一个工具一个注册函数"
+
+- **背景**：`build_server` 曾是一个 264 行的函数，8 个工具的 schema、参数解析、业务调用、错误包装全内联。加第 9 个工具只会让它更长，且无法单独阅读某个工具的契约。
+- **决策**：拆成 `register_<tool>(server, root[, gate])`，只读工具放 `tools_read.mbt`，写工具放 `tools_write.mbt`（写工具额外收共享 `gate` 互斥锁）；`build_server` 只保留 15 行组装。
+- **后果**：新增工具 = 一个函数 + 一行注册；工具契约可单独阅读；`server.mbt` 从 414 行降到 171 行（其中 150 行是共享助手）。
+- **被否**：用表驱动（把 8 个工具塞进一个数组循环注册）——闭包类型各异，会引入大量动态派发，可读性反而更差。

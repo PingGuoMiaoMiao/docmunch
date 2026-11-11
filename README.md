@@ -24,6 +24,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P8 | body-aware search (section keywords), MCP HTTP transport | ✅ done |
 | P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr, DNS double-resolve + index mutex | ✅ done |
 | P10 | charset-aware decoding, cache final_url, explicit JSON extends, acceptance self-check | ✅ done |
+| P11 | maintainability pass: core/text package, one registration per MCP tool, split the two 500+ line files | ✅ done |
 
 ## Quick start
 

@@ -116,3 +116,43 @@ cmd/main  → 全部
 4. **补 `mcp` 单测** → 6–8 个用例；验收：`moon test` 增加且全绿。
 
 每步一个 commit，任一步失败可单独回滚（互不依赖）。
+
+---
+
+## 6. 改造结果（2026-11-11 完成）
+
+三处定向改造 + 一处补测已落地，分 11 个独立 commit（T1–T9）。
+
+| 指标 | 改造前 | 改造后 |
+| --- | --- | --- |
+| 生产文件数 | 31 | **42**（拆细分文件） |
+| 生产代码行 | 4,849 | 4,868（+19：文件头注释与切片边界） |
+| 测试文件 / 行 | 9 / 1,108 | **11 / 1,274** |
+| 测试用例 | 79 | **95** |
+| 最长文件 | 640（`extract/readability.mbt`） | **486**（`cmd/main/main.mbt`，CLI 12 个子命令） |
+| 最长函数 | 264（`build_server`） | **149**（`split_document`，算法本体） |
+| `build_server` | 264 行 | **15 行** |
+| 跨包重复的纯文本函数 | 3 处 | **0** |
+| `mcp` 包单测 | 0 | **8 个用例** |
+
+改造清单：
+
+| # | 改动 | commit |
+| --- | --- | --- |
+| T1 | 新建零依赖 `core/text`（`find_sub`/`rfind_sub`/`split_lines`） | `b53bc90` |
+| T2 | `extract`、`md` 共用 `find_sub`；补 `index` 的 async 显式 import | `0f06e71` |
+| T3 | 统一 `split_lines`（删 `http` 与 `md` 各一份） | `dafaeca` |
+| T4 | `json_escape`/`truncate_utf8` 移入 `core/text`，`http/json.mbt` 删除 | `4a9fffd` |
+| T5 | `build_server` 拆成 8 个注册函数（`tools_read` / `tools_write`） | `52afbb5` |
+| T6 | `mcp` 补 8 个单测（参数、schema、失败信封） | `52ba09c` |
+| T7 | `readability.mbt` 666 行 → `clean`/`score`/`container`/`title`/`extract` | `ecacfd7` |
+| T8 | `convert.mbt` 485 行 → `inline`/`block`/`links`/`render` | `1366192` |
+| T9 | 文档与 ADR（D48/D49） | 本次 |
+
+每一步的门禁都执行过：`moon test` 从 79 → 95 全程全绿；4 份 Markdown 黄金文件在 T3/T5/T7/T8 后**逐字节一致**；`compare.py` 始终 4/4、1.03/0.91；两套 MCP e2e 在 T4/T5 后仍分别 10/10、7/7。
+
+**仍然存在、且本轮有意不做的**：
+
+- `raw_dir` 在 `http/cache.mbt` 与 `index/store.mbt` 各有一个（语义不同：抓取缓存 vs 索引原文），名字相同但签名不同，属于可读性小瑕疵，不值得为它再造一层抽象；
+- `cmd/main/main.mbt` 486 行，因为 12 个 CLI 子命令都在这里；若继续增长，可按 `cmd_fetch` / `cmd_index` / `cmd_mcp` 拆文件，但当前仍在可接受范围；
+- 2 条 `result_error_return`、2 条 `unused_package` 告警（前者是 MCP 契约要求返回 `Result`，后者是 `async test` 与测试专用包的工具链误报）。
