@@ -293,6 +293,7 @@ pub fn split_document(
 
   if preamble_has_content && heads.length() > 0 && heads[0].start > 0 {
     let id = @core.make_section_id(repo, doc_path, "preamble", 0)
+    let stats = @core.term_stats(slice_bytes(text, 0, heads[0].start))
     sections.push({
       id,
       repo,
@@ -303,7 +304,8 @@ pub fn split_document(
       byte_end: heads[0].start,
       parent_id: "",
       content_hash: sha256_hex_text(slice_bytes(text, 0, heads[0].start)),
-      keywords: @core.extract_keywords(slice_bytes(text, 0, heads[0].start)),
+      terms: stats.0,
+      tokens: stats.1,
     })
   }
 
@@ -340,6 +342,7 @@ pub fn split_document(
     } else {
       total
     }
+    let stats = @core.term_stats(slice_bytes(text, h.start, byte_end))
     sections.push({
       id,
       repo,
@@ -350,7 +353,8 @@ pub fn split_document(
       byte_end,
       parent_id,
       content_hash: sha256_hex_text(slice_bytes(text, h.start, byte_end)),
-      keywords: @core.extract_keywords(slice_bytes(text, h.start, byte_end)),
+      terms: stats.0,
+      tokens: stats.1,
     })
     ancestors.push((h.level, id, unique))
   }

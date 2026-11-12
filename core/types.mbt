@@ -18,7 +18,8 @@ pub(all) struct Section {
   byte_end : Int32
   parent_id : String
   content_hash : String
-  keywords : Array[String]
+  terms : Array[String]
+  tokens : Int32
 }
 
 ///|
@@ -31,7 +32,7 @@ pub(all) struct DocIndex {
 }
 
 ///|
-pub let index_version : Int32 = 2
+pub let index_version : Int32 = 3
 
 ///|
 /// Number of UTF-8 bytes a single code point occupies.

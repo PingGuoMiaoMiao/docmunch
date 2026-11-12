@@ -107,3 +107,61 @@ pub fn extract_keywords(text : String, max_count? : Int32) -> Array[String] {
   }
   out
 }
+
+///|
+/// Term frequencies for BM25: the first `max_terms` most frequent terms, each
+/// repeated `min(count, cap)` times, plus the total number of qualifying tokens
+/// (used for length normalisation).
+///
+/// The list stays an `Array[String]` on purpose: it derives to JSON without a
+/// custom codec, and repeats give us `tf` without a second field.
+pub fn term_stats(text : String, max_terms? : Int32) -> (Array[String], Int32) {
+  let limit = match max_terms {
+    Some(n) => n
+    None => 40
+  }
+  let order : Array[String] = []
+  let counts : Map[String, Int32] = Map([])
+  let mut total = 0
+  for w in ascii_words(text) {
+    if w.length() < 3 || is_stopword(w) {
+      continue
+    }
+    total = total + 1
+    let n = match counts.get(w) {
+      Some(v) => v
+      None => 0
+    }
+    if n == 0 {
+      order.push(w)
+    }
+    counts[w] = n + 1
+  }
+  let pairs : Array[(String, Int32)] = []
+  for w in order {
+    let n = match counts.get(w) {
+      Some(v) => v
+      None => 0
+    }
+    pairs.push((w, n))
+  }
+  for i = 1; i < pairs.length(); i = i + 1 {
+    let item = pairs[i]
+    let mut j = i - 1
+    while j >= 0 && pairs[j].1 < item.1 {
+      pairs[j + 1] = pairs[j]
+      j = j - 1
+    }
+    pairs[j + 1] = item
+  }
+  let out : Array[String] = []
+  let take = if pairs.length() < limit { pairs.length() } else { limit }
+  for i = 0; i < take; i = i + 1 {
+    let (word, count) = pairs[i]
+    let repeat = if count > 8 { 8 } else { count }
+    for _k = 0; _k < repeat; _k = _k + 1 {
+      out.push(word)
+    }
+  }
+  (out, total)
+}

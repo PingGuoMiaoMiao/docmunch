@@ -1,6 +1,7 @@
 import {
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/math",
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "gmlewis/sha256",

@@ -189,7 +189,9 @@ fn register_search_sections(
       "," +
       prop_str("query", "Search text.") +
       "," +
-      prop_int("limit", "Max hits, default 10."),
+      prop_int("limit", "Max hits, default 10.") +
+      "," +
+      prop_str("mode", "bm25 (default) or weighted."),
       "\"repo\",\"query\"",
     ),
     async fn(_ctx, args) {

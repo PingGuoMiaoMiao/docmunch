@@ -36,6 +36,8 @@ pub async fn save_index(String, String, @core.DocIndex) -> Unit
 
 pub fn search(@core.DocIndex, String, max_results? : Int32) -> Array[SearchHit]
 
+pub fn search_with_mode(@core.DocIndex, String, SearchMode, max_results? : Int32) -> Array[SearchHit]
+
 pub fn section_by_id(@core.DocIndex, String) -> @core.Section?
 
 pub fn words_of(String) -> Array[String]
@@ -52,6 +54,12 @@ pub(all) struct SearchHit {
   level : Int32
   score : Int32
 }
+
+pub(all) enum SearchMode {
+  Bm25
+  Weighted
+}
+pub fn SearchMode::parse(String) -> Self
 
 // Type aliases
 

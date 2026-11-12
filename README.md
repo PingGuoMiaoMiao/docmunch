@@ -25,6 +25,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr, DNS double-resolve + index mutex | ✅ done |
 | P10 | charset-aware decoding, cache final_url, explicit JSON extends, acceptance self-check | ✅ done |
 | P11 | maintainability pass: core/text package, one registration per MCP tool, split the two 500+ line files | ✅ done |
+| P12 | BM25 search (k1=1.2, b=0.75, field weights), index v3 | ✅ done |
 
 ## Quick start
 
@@ -51,7 +52,8 @@ python tools/toc_check.py
 
 # index -> search -> retrieve (O(1) byte-range read, hash-verified)
 moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
-moon run cmd/main --target native -- search local readability
+moon run cmd/main --target native -- search local readability          # BM25 by default
+moon run cmd/main --target native -- search local readability --mode weighted
 moon run cmd/main --target native -- section local "<id from search>" --verify
 moon run cmd/main --target native -- repos
 moon run cmd/main --target native -- delete local

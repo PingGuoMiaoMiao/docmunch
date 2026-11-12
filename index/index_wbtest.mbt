@@ -153,3 +153,59 @@ async test "reserved device names still work" {
   delete_repo(root, "CON")
   assert_eq(list_repos(root).length(), 0)
 }
+
+///|
+async test "bm25 favours the rare term over the common one" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text =
+    #|# Alpha
+    #|
+    #|alpha alpha alpha common common content here
+    #|
+    #|# Beta
+    #|
+    #|beta uncommon rarewording content here
+    #|
+    #|# Gamma
+    #|
+    #|gamma common common content here
+  let index = build_index(root, "bm25", "doc.md", text)
+  // "uncommon" appears once, in one section; "common" appears in two.
+  let hits = search(index, "uncommon")
+  assert_eq(hits.length(), 1)
+  assert_eq(hits[0].title, "Beta")
+  let common_hits = search(index, "common")
+  assert_eq(common_hits.length(), 2)
+}
+
+///|
+async test "bm25 prefers the shorter section for the same term" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text =
+    #|# Short
+    #|
+    #|deployment
+    #|
+    #|# Long
+    #|
+    #|deployment plus a great many other words that make this section much longer than the first one
+  let index = build_index(root, "bm25", "doc.md", text)
+  let hits = search(index, "deployment")
+  assert_eq(hits.length(), 2)
+  assert_eq(hits[0].title, "Short")
+}
+
+///|
+async test "weighted mode is still selectable" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let index = build_index(root, "local", "guide.md", sample_md())
+  let hits = search_with_mode(index, "usage", SearchMode::Weighted)
+  assert_eq(hits[0].title, "Usage")
+  let parsed = SearchMode::parse("weighted")
+  assert_true(parsed is SearchMode::Weighted)
+  assert_true(SearchMode::parse("bm25") is SearchMode::Bm25)
+  assert_true(SearchMode::parse("") is SearchMode::Bm25)
+}

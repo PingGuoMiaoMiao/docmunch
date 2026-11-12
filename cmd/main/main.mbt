@@ -16,7 +16,9 @@ fn usage() -> Unit {
   println("  docmunch markdown <url|file> [--out PATH] [--allow-private]")
   println("  docmunch toc <file.md> [--verify]")
   println("  docmunch index <url|file> [--repo NAME] [--root DIR]")
-  println("  docmunch search <repo> <query> [--root DIR]")
+  println(
+    "  docmunch search <repo> <query> [--root DIR] [--mode bm25|weighted]",
+  )
   println("  docmunch section <repo> <id> [--verify] [--root DIR]")
   println("  docmunch repos [--root DIR]")
   println("  docmunch delete <repo> [--root DIR]")
@@ -342,7 +344,13 @@ async fn cmd_search(
       return
     }
   }
-  let hits = @index.search(index, query)
+  let mode = @index.SearchMode::parse(
+    match option_value(args, "--mode") {
+      Some(v) => v
+      None => "bm25"
+    },
+  )
+  let hits = @index.search_with_mode(index, query, mode)
   for hit in hits {
     println(
       "score=\{hit.score} level=\{hit.level} id=\{hit.id} title=\{hit.title}",
