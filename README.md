@@ -28,6 +28,16 @@ non-commercial-licensed, so only its *design* was studied).
 | P12 | BM25 search (k1=1.2, b=0.75, field weights), index v3 | ✅ done |
 | P13 | 12 MCP tools (added get_doc / list_docs / get_section_descendants / search_titles) | ✅ done |
 
+## Install
+
+Published on MoonCakes as **`PingGuoMiaoMiao/docmunch` 0.2.0**:
+
+```sh
+moon add PingGuoMiaoMiao/docmunch
+```
+
+Docs: <https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch>
+
 ## Quick start
 
 ```sh
