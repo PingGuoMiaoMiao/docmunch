@@ -222,3 +222,170 @@ fn register_search_sections(
     },
   )
 }
+
+///|
+fn register_list_docs(
+  server : @mcpsdk.MCPServer,
+  root : String,
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  server.tool(
+    "list_docs",
+    "List the documents of a repo with their section counts.",
+    schema(prop_str("repo", "Repo name."), "\"repo\""),
+    async fn(_ctx, args) {
+      let repo = arg_str(args, "repo")
+      let index = match @index.load_index(root, repo) {
+        Some(i) => i
+        None => return failure("repo not indexed: \{repo}")
+      }
+      let sb = StringBuilder::StringBuilder()
+      sb.write_string("{\"repo\":\{@text.json_escape(repo)},\"docs\":[")
+      let mut first = true
+      for doc_path in index.doc_paths {
+        if !first {
+          sb.write_char(',')
+        }
+        first = false
+        let mut count = 0
+        for s in index.sections {
+          if s.doc_path == doc_path {
+            count = count + 1
+          }
+        }
+        sb.write_string(
+          "{\"path\":\{@text.json_escape(doc_path)},\"sections\":\{count}}",
+        )
+      }
+      sb.write_string("]}")
+      Ok(text_result(sb.to_string()))
+    },
+  )
+}
+
+///|
+fn register_get_doc(
+  server : @mcpsdk.MCPServer,
+  root : String,
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  server.tool(
+    "get_doc",
+    "Return a whole document's Markdown (byte-capped; prefer get_section for large docs).",
+    schema(
+      prop_str("repo", "Repo name.") +
+      "," +
+      prop_str("path", "Document path as returned by list_docs or get_toc.") +
+      "," +
+      prop_int("max_bytes", "Cap the response, default 20000, 0 = no cap."),
+      "\"repo\",\"path\"",
+    ),
+    async fn(_ctx, args) {
+      let repo = arg_str(args, "repo")
+      let path = arg_str(args, "path")
+      let index = match @index.load_index(root, repo) {
+        Some(i) => i
+        None => return failure("repo not indexed: \{repo}")
+      }
+      if !index.doc_paths.contains(path) {
+        return failure("document not indexed: \{path}")
+      }
+      let text = @index.read_document_text(root, repo, path) catch {
+        e => return failure("read failed: \{e.to_string()}")
+      }
+      let max_bytes = arg_int(args, "max_bytes", 20000)
+      let total = @utf8.encode(text).length()
+      let body = @text.truncate_utf8(text, max_bytes)
+      let truncated = max_bytes > 0 && total > max_bytes
+      Ok(
+        text_result(
+          "{\"path\":\{@text.json_escape(path)},\"truncated\":\{truncated},\"total_bytes\":\{total},\"markdown\":\{@text.json_escape(body)}}",
+        ),
+      )
+    },
+  )
+}
+
+///|
+fn register_get_section_descendants(
+  server : @mcpsdk.MCPServer,
+  root : String,
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  server.tool(
+    "get_section_descendants",
+    "Return every descendant of a section (summaries only, no bodies).",
+    schema(
+      prop_str("repo", "Repo name.") + "," + prop_str("id", "Section id."),
+      "\"repo\",\"id\"",
+    ),
+    async fn(_ctx, args) {
+      let repo = arg_str(args, "repo")
+      let id = arg_str(args, "id")
+      let index = match @index.load_index(root, repo) {
+        Some(i) => i
+        None => return failure("repo not indexed: \{repo}")
+      }
+      let section = match @index.section_by_id(index, id) {
+        Some(s) => s
+        None => return failure("section not found: \{id}")
+      }
+      let rows = @index.descendants_of(index, section)
+      let sb = StringBuilder::StringBuilder()
+      sb.write_string("{\"descendants\":[")
+      for i = 0; i < rows.length(); i = i + 1 {
+        if i > 0 {
+          sb.write_char(',')
+        }
+        let d = rows[i]
+        sb.write_string(
+          "{\"id\":\{@text.json_escape(d.id)},\"level\":\{d.level},\"title\":\{@text.json_escape(d.title)}}",
+        )
+      }
+      sb.write_string("]}")
+      Ok(text_result(sb.to_string()))
+    },
+  )
+}
+
+///|
+fn register_search_titles(
+  server : @mcpsdk.MCPServer,
+  root : String,
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  server.tool(
+    "search_titles",
+    "Substring search restricted to section titles (exact match first).",
+    schema(
+      prop_str("repo", "Repo name.") +
+      "," +
+      prop_str("query", "Title text.") +
+      "," +
+      prop_int("limit", "Max hits, default 20."),
+      "\"repo\",\"query\"",
+    ),
+    async fn(_ctx, args) {
+      let repo = arg_str(args, "repo")
+      let query = arg_str(args, "query")
+      let index = match @index.load_index(root, repo) {
+        Some(i) => i
+        None => return failure("repo not indexed: \{repo}")
+      }
+      let rows = @index.search_titles(
+        index,
+        query,
+        limit=arg_int(args, "limit", 20),
+      )
+      let sb = StringBuilder::StringBuilder()
+      sb.write_string("{\"hits\":[")
+      for i = 0; i < rows.length(); i = i + 1 {
+        if i > 0 {
+          sb.write_char(',')
+        }
+        let s = rows[i]
+        sb.write_string(
+          "{\"id\":\{@text.json_escape(s.id)},\"level\":\{s.level},\"title\":\{@text.json_escape(s.title)}}",
+        )
+      }
+      sb.write_string("]}")
+      Ok(text_result(sb.to_string()))
+    },
+  )
+}

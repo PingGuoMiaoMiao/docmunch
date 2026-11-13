@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/core"
+package "PingGuoMiaoMiao/docmunch/core"
 
 import {
   "moonbitlang/core/json",

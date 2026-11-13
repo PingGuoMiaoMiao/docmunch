@@ -209,3 +209,31 @@ async test "weighted mode is still selectable" {
   assert_true(SearchMode::parse("bm25") is SearchMode::Bm25)
   assert_true(SearchMode::parse("") is SearchMode::Bm25)
 }
+
+///|
+async test "descendants_of walks the whole subtree" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text = "# A\n\ntext\n## B\nmore\n### C\ndeep\n## D\nsibling\n"
+  let index = build_index(root, "local", "doc.md", text)
+  let a = match section_by_id(index, "local::doc.md::a#1") {
+    Some(s) => s
+    None => abort("section a missing")
+  }
+  let kids = descendants_of(index, a)
+  assert_eq(kids.length(), 3)
+  assert_eq(kids[0].title, "B")
+}
+
+///|
+async test "search_titles puts the exact match first and ignores bodies" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text = "# Install\n\nrun it\n\n# Installation notes\n\nmore\n"
+  let index = build_index(root, "local", "doc.md", text)
+  let hits = search_titles(index, "install")
+  assert_eq(hits.length(), 2)
+  assert_eq(hits[0].title, "Install")
+  // A term that only exists in a body is not a title hit.
+  assert_eq(search_titles(index, "more").length(), 0)
+}

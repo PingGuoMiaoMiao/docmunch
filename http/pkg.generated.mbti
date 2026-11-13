@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/http"
+package "PingGuoMiaoMiao/docmunch/http"
 
 import {
   "tonyfettes/url",

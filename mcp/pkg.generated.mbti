@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/mcp"
+package "PingGuoMiaoMiao/docmunch/mcp"
 
 import {
   "colmugx/mcp/protocol/types",

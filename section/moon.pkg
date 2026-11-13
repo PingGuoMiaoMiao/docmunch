@@ -1,5 +1,5 @@
 import {
   "moonbitlang/core/encoding/utf8",
   "gmlewis/sha256",
-  "pingguomiaomiao/docmunch/core",
+  "PingGuoMiaoMiao/docmunch/core",
 }

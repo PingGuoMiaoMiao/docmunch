@@ -1,4 +1,4 @@
-# P6 MCP 服务：stdio 上的 8 个工具
+# P6 MCP 服务：stdio 上的工具面（初版 8 个，P13 扩到 12 个）
 
 - 时间：2026-11-08
 - 目标：把索引与检索能力通过 MCP 暴露给 AI 客户端（Claude Code / Cursor 等）
@@ -37,7 +37,7 @@
 
 ```
 ok   server/discover
-ok   tools/list has 8 tools
+ok   tools/list has 12 tools
 ok   index_local
 ok   get_toc
 ok   search_sections

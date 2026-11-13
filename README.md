@@ -19,13 +19,14 @@ non-commercial-licensed, so only its *design* was studied).
 | P3 | HTML → CommonMark, link absolutization, golden files | ✅ done |
 | P4 | section split: ATX + setext, fence-aware, hashes, stable slugs | ✅ done |
 | P5 | index store, search, byte-range retrieval | ✅ done |
-| P6 | MCP server (stdio, 8 tools) | ✅ done |
+| P6 | MCP server (stdio) | ✅ done |
 | P7 | link-density pruning, CI, benchmark, delivery docs | ✅ done |
 | P8 | body-aware search (section keywords), MCP HTTP transport | ✅ done |
 | P9 | audit fixes: repo identity/delete, doc_path rules, MCP response cap, frontmatter/fence, cache TTL/retry, stderr, DNS double-resolve + index mutex | ✅ done |
 | P10 | charset-aware decoding, cache final_url, explicit JSON extends, acceptance self-check | ✅ done |
 | P11 | maintainability pass: core/text package, one registration per MCP tool, split the two 500+ line files | ✅ done |
 | P12 | BM25 search (k1=1.2, b=0.75, field weights), index v3 | ✅ done |
+| P13 | 12 MCP tools (added get_doc / list_docs / get_section_descendants / search_titles) | ✅ done |
 
 ## Quick start
 

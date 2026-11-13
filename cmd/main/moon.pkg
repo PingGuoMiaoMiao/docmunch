@@ -3,13 +3,13 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/async/stdio",
-  "pingguomiaomiao/docmunch/core/text",
-  "pingguomiaomiao/docmunch/http",
-  "pingguomiaomiao/docmunch/extract",
-  "pingguomiaomiao/docmunch/md",
-  "pingguomiaomiao/docmunch/section",
-  "pingguomiaomiao/docmunch/index",
-  "pingguomiaomiao/docmunch/mcp",
+  "PingGuoMiaoMiao/docmunch/core/text",
+  "PingGuoMiaoMiao/docmunch/http",
+  "PingGuoMiaoMiao/docmunch/extract",
+  "PingGuoMiaoMiao/docmunch/md",
+  "PingGuoMiaoMiao/docmunch/section",
+  "PingGuoMiaoMiao/docmunch/index",
+  "PingGuoMiaoMiao/docmunch/mcp",
 }
 
 pkgtype(kind: "executable")

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/core/text"
+package "PingGuoMiaoMiao/docmunch/core/text"
 
 // Values
 pub fn find_sub(String, String, from? : Int32) -> Int32

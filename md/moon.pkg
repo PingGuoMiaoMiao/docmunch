@@ -3,6 +3,6 @@ import {
   "moonbit-community/html/src" @htmlsrc,
   "moonbit-community/cmark/cmark_html",
   "tonyfettes/url",
-  "pingguomiaomiao/docmunch/core/text",
-  "pingguomiaomiao/docmunch/extract",
+  "PingGuoMiaoMiao/docmunch/core/text",
+  "PingGuoMiaoMiao/docmunch/extract",
 }

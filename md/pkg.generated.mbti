@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/md"
+package "PingGuoMiaoMiao/docmunch/md"
 
 // Values
 pub fn html_to_markdown(String, base_url? : String) -> String

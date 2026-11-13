@@ -162,6 +162,10 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   let index_gate : Array[@async.Mutex] = [@async.Mutex::Mutex()]
   server = register_list_repos(server, root)
   server = register_get_toc(server, root)
+  server = register_list_docs(server, root)
+  server = register_get_doc(server, root)
+  server = register_get_section_descendants(server, root)
+  server = register_search_titles(server, root)
   server = register_get_section(server, root)
   server = register_get_section_context(server, root)
   server = register_search_sections(server, root)

@@ -109,3 +109,64 @@ pub async fn get_section_text(
     }
   }
 }
+
+///|
+/// Every descendant of `s`, depth-first in document order.
+pub fn descendants_of(
+  index : @core.DocIndex,
+  s : @core.Section,
+) -> Array[@core.Section] {
+  let out : Array[@core.Section] = []
+  let mut frontier = children_of(index, s)
+  while frontier.length() > 0 {
+    let next : Array[@core.Section] = []
+    for child in frontier {
+      out.push(child)
+      for grandchild in children_of(index, child) {
+        next.push(grandchild)
+      }
+    }
+    frontier = next
+  }
+  out
+}
+
+///|
+/// Sections whose title matches `query` (case-insensitive substring), with the
+/// exact match ranked first. Titles are cheap, so this does not touch bodies.
+pub fn search_titles(
+  index : @core.DocIndex,
+  query : String,
+  limit? : Int32,
+) -> Array[@core.Section] {
+  let max = match limit {
+    Some(n) => n
+    None => 20
+  }
+  let q = query.trim().to_lower().to_owned()
+  if q == "" {
+    return []
+  }
+  let exact : Array[@core.Section] = []
+  let partial : Array[@core.Section] = []
+  for s in index.sections {
+    let title = s.title.to_lower()
+    if title == q {
+      exact.push(s)
+    } else if title.contains(q) {
+      partial.push(s)
+    }
+  }
+  let out : Array[@core.Section] = []
+  for s in exact {
+    if out.length() < max {
+      out.push(s)
+    }
+  }
+  for s in partial {
+    if out.length() < max {
+      out.push(s)
+    }
+  }
+  out
+}

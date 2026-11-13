@@ -122,16 +122,20 @@ def main() -> int:
         expected = sorted(
             [
                 "delete_index",
+                "get_doc",
                 "get_section",
                 "get_section_context",
+                "get_section_descendants",
                 "get_toc",
                 "index_local",
                 "index_url",
+                "list_docs",
                 "list_repos",
                 "search_sections",
+                "search_titles",
             ]
         )
-        check("tools/list has 8 tools", names == expected, f"got {names}")
+        check("tools/list has 12 tools", names == expected, f"got {names}")
 
         fixture = "fixtures/markdown/readability-readme.md"
         indexed = client.call(
@@ -182,6 +186,33 @@ def main() -> int:
             any(a["title"] == "Readability.js" for a in ctx_doc.get("ancestors", [])),
             str(ctx_doc.get("ancestors"))[:120],
         )
+
+        docs = client.call("tools/call", {"name": "list_docs", "arguments": {"repo": "e2e"}})
+        check("list_docs", "readability-readme" in tool_text(docs), tool_text(docs)[:160])
+
+        whole = client.call(
+            "tools/call",
+            {"name": "get_doc", "arguments": {"repo": "e2e", "path": fixture, "max_bytes": 200}},
+        )
+        whole_doc = json.loads(tool_text(whole))
+        check(
+            "get_doc truncates",
+            whole_doc.get("truncated") is True
+            and len(whole_doc.get("markdown", "")) <= 200,
+            str(whole_doc)[:160],
+        )
+
+        titles = client.call(
+            "tools/call",
+            {"name": "search_titles", "arguments": {"repo": "e2e", "query": "install"}},
+        )
+        check("search_titles", "Installation" in tool_text(titles), tool_text(titles)[:160])
+
+        desc = client.call(
+            "tools/call",
+            {"name": "get_section_descendants", "arguments": {"repo": "e2e", "id": section_id}},
+        )
+        check("get_section_descendants", "descendants" in tool_text(desc), tool_text(desc)[:160])
 
         repos = client.call("tools/call", {"name": "list_repos", "arguments": {}})
         check("list_repos", "e2e" in tool_text(repos), tool_text(repos)[:120])

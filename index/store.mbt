@@ -237,3 +237,17 @@ pub async fn read_section_text(
   let bytes = Bytes::from_array(buf[:read])
   @utf8.decode_lossy(bytes)
 }
+
+///|
+/// Read a whole cached document (the raw file the byte offsets point into).
+pub async fn read_document_text(
+  root : String,
+  repo : String,
+  doc_path : String,
+) -> String {
+  let path = raw_file_path(root, repo, doc_path)
+  if !(@fs.exists(path) catch { _ => false }) {
+    return ""
+  }
+  @fs.read_file(path).text()
+}

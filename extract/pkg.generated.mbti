@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "pingguomiaomiao/docmunch/extract"
+package "PingGuoMiaoMiao/docmunch/extract"
 
 import {
   "moonbit-community/html/src",

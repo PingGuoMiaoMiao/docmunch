@@ -1,11 +1,13 @@
 // docmunch — structured documentation retrieval for AI agents, in MoonBit.
 // Module layout: one package per pipeline stage, see docs/pre-research.md.
 
-name = "pingguomiaomiao/docmunch"
+name = "PingGuoMiaoMiao/docmunch"
 
-version = "0.1.0"
+version = "0.2.0"
 
 readme = "README.md"
+
+repository = "https://github.com/PingGuoMiaoMiao/docmunch"
 
 license = "Apache-2.0"
 

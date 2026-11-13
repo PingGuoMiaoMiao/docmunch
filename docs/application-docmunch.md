@@ -79,13 +79,13 @@ URL / 本地文件
 - 布局：`<root>/<repo>/index.json`（只存元数据，不存正文）+ `<root>/<repo>/raw/<sha256(doc_path)>.bin`（原文缓存）；
 - 写入走 temp + rename 原子替换；`index_version` 不匹配即视为未索引（fail-closed，宁可重建不返回半残数据）；
 - 每节附带最多 20 个正文关键词（去停用词、按词频排序、同频按首次出现），使「词只出现在正文里」的查询也能命中；
-- 检索打分可解释：标题精确 +20 / 标题包含 +10 / 标题词 +5 / 路径词 +2 / 正文关键词 +1（每节封顶 +5）；
+- 检索默认 **BM25**（k1=1.2、b=0.75，字段权重 title 3 / path 2 / body 1），旧的加权打分保留为 `--mode weighted`；
 - 取回走 `File::read_at(position=byte_start)`，**不加载整篇文档**；`--verify` 会重算 sha256 与索引比对。
 
 ### 2.6 MCP 服务
 
 - 实现 MCP **2026-07-28**（无状态协议：`server/discover` + 每请求 `_meta`）；
-- 8 个工具：`index_url`、`index_local`、`list_repos`、`get_toc`、`get_section`、`get_section_context`、`search_sections`、`delete_index`；
+- **12 个工具**：`index_url`、`index_local`、`list_repos`、`list_docs`、`get_doc`、`get_toc`、`get_section`、`get_section_context`、`get_section_descendants`、`search_sections`、`search_titles`、`delete_index`；
 - 传输：stdio（默认）与 Streamable HTTP（`--http --port`）；
 - `get_section` / `get_section_context` 支持 `max_bytes`（默认 8000）截断，返回 `truncated`/`total_bytes`，避免一次调用撑爆客户端上下文；
 - 索引写操作由共享互斥锁串行化，HTTP 并发调用不会互相覆盖。

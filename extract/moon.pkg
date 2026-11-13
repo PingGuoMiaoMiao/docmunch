@@ -1,5 +1,5 @@
 import {
   "moonbit-community/html",
   "moonbit-community/html/src" @htmlsrc,
-  "pingguomiaomiao/docmunch/core/text",
+  "PingGuoMiaoMiao/docmunch/core/text",
 }
