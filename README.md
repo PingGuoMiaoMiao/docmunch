@@ -27,6 +27,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P11 | maintainability pass: core/text package, one registration per MCP tool, split the two 500+ line files | ✅ done |
 | P12 | BM25 search (k1=1.2, b=0.75, field weights), index v3 | ✅ done |
 | P13 | 12 MCP tools (added get_doc / list_docs / get_section_descendants / search_titles) | ✅ done |
+| P14 | development log published (docs/devlog.md) | ✅ done |
 
 ## Install
 
@@ -133,6 +134,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 
 ## Docs
 
+- [docs/devlog.md](docs/devlog.md) — development log: what was tried, what broke, what I would do differently.
 - [docs/pre-research.md](docs/pre-research.md) — ecosystem survey, reference-implementation
   teardown, algorithm notes, and every source link used.
 - [docs/decisions.md](docs/decisions.md) — ADR-style decision records (D1–D41).
