@@ -283,3 +283,16 @@ async test "collect_documents walks subdirectories and skips noise" {
   assert_false(out.contains("sub/skip.txt"))
   assert_false(out.contains("node_modules/c.md"))
 }
+
+///|
+async test "chinese queries match chinese bodies" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text = "# 语言更新\n\n本次更新了派生语法与类型重命名。\n\n## 工具链更新\n\n编译器性能提升。\n"
+  let index = build_index(root, "cn", "doc.md", text)
+  let hits = search(index, "编译器")
+  assert_true(hits.length() >= 1)
+  assert_eq(hits[0].title, "工具链更新")
+  let none = search(index, "量子计算")
+  assert_eq(none.length(), 0)
+}
