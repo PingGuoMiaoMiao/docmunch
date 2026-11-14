@@ -32,7 +32,7 @@ pub(all) struct DocIndex {
 }
 
 ///|
-pub let index_version : Int32 = 3
+pub let index_version : Int32 = 4
 
 ///|
 /// Number of UTF-8 bytes a single code point occupies.

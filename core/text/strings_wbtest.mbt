@@ -84,3 +84,32 @@ test "json_escape quotes, backslashes and control characters" {
   // Chinese passes through unescaped.
   assert_eq(json_escape("\u{4E2D}"), "\"\u{4E2D}\"")
 }
+
+///|
+test "tokenize keeps ascii words and cuts CJK into bigrams" {
+  let toks = tokenize("Hello world 中文检索 test")
+  assert_true(toks.contains("hello"))
+  assert_true(toks.contains("world"))
+  assert_true(toks.contains("test"))
+  assert_true(toks.contains("中文"))
+  assert_true(toks.contains("文检"))
+  assert_true(toks.contains("检索"))
+  assert_false(toks.contains("中文检索"))
+}
+
+///|
+test "tokenize handles a single CJK character and mixed runs" {
+  let toks = tokenize("中 a 文")
+  assert_true(toks.contains("中"))
+  assert_true(toks.contains("文"))
+  assert_true(toks.contains("a"))
+}
+
+///|
+test "tokenize treats CJK punctuation as separators" {
+  let toks = tokenize("语言，更新。")
+  assert_true(toks.contains("语言"))
+  assert_true(toks.contains("更新"))
+  assert_false(toks.contains("言，"))
+  assert_false(toks.contains("，更"))
+}

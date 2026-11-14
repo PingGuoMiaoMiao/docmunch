@@ -31,30 +31,10 @@ pub fn SearchMode::parse(raw : String) -> SearchMode {
 }
 
 ///|
-fn is_word_char(c : Char) -> Bool {
-  let n = c.to_int()
-  (n >= 97 && n <= 122) ||
-  (n >= 65 && n <= 90) ||
-  (n >= 48 && n <= 57) ||
-  n > 127
-}
-
-///|
+/// Query/index terms: same tokenizer as the indexer, so CJK queries line up with
+/// the stored bigrams (D54).
 pub fn words_of(text : String) -> Array[String] {
-  let out : Array[String] = []
-  let sb = StringBuilder::StringBuilder()
-  for c in text {
-    if is_word_char(c) {
-      sb.write_char(c)
-    } else if sb.to_string() != "" {
-      out.push(sb.to_string().to_lower())
-      sb.reset()
-    }
-  }
-  if sb.to_string() != "" {
-    out.push(sb.to_string().to_lower())
-  }
-  out
+  @text.tokenize(text)
 }
 
 ///|

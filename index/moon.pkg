@@ -6,5 +6,6 @@ import {
   "moonbitlang/async/fs",
   "gmlewis/sha256",
   "PingGuoMiaoMiao/docmunch/core",
+  "PingGuoMiaoMiao/docmunch/core/text",
   "PingGuoMiaoMiao/docmunch/section",
 }

@@ -4,45 +4,17 @@
 // inverted index: the index stays compact, search stays explainable, and the
 // raw document is never read during search (see ADR D35).
 //
-// v1 tokenizes ASCII words only. Chinese text has no whitespace-delimited words,
-// so CJK sections rely on title/path scoring; documented limitation.
+// Terms come from `core/text`'s tokenizer: ASCII words plus CJK bigrams, so a
+// Chinese query can match a Chinese section without a segmentation model (D54).
 
 ///|
-fn is_keyword_char(c : Char) -> Bool {
-  let n = c.to_int()
-  (n >= 97 && n <= 122) ||
-  (n >= 65 && n <= 90) ||
-  (n >= 48 && n <= 57) ||
-  c == '-' ||
-  c == '_'
-}
-
-///|
+/// Index terms for `text`: ASCII words plus CJK bigrams, shared with the query
+/// side so both sides speak the same vocabulary (D54).
 fn ascii_words(text : String) -> Array[String] {
-  let out : Array[String] = []
-  let sb = StringBuilder::StringBuilder()
-  for c in text {
-    if is_keyword_char(c) {
-      let n = c.to_int()
-      if n >= 65 && n <= 90 {
-        sb.write_char(Int32::unsafe_to_char(n + 32))
-      } else {
-        sb.write_char(c)
-      }
-    } else if sb.to_string() != "" {
-      out.push(sb.to_string())
-      sb.reset()
-    }
-  }
-  if sb.to_string() != "" {
-    out.push(sb.to_string())
-  }
-  out
+  @text.tokenize(text)
 }
 
 ///|
-/// English stopwords for keyword extraction. Package-level and read-only so the
-/// list is built once instead of on every `is_stopword` call.
 let stopwords : Array[String] = [
   "the", "and", "for", "with", "that", "this", "from", "are", "was", "were", "have",
   "has", "had", "not", "but", "you", "your", "can", "will", "all", "any", "our",
@@ -53,6 +25,22 @@ let stopwords : Array[String] = [
   "been", "being", "does", "did", "done", "each", "both", "after", "before", "between",
   "through",
 ]
+
+///|
+/// True for tokens worth indexing: ASCII words need 3+ characters to avoid
+/// noise, but CJK bigrams are 2 characters by construction and must survive
+/// that filter (D54).
+fn is_usable_term(w : String) -> Bool {
+  if w.length() >= 3 {
+    return true
+  }
+  for c in w {
+    if c.to_int() > 127 {
+      return true
+    }
+  }
+  false
+}
 
 ///|
 fn is_stopword(w : String) -> Bool {
@@ -70,7 +58,7 @@ pub fn extract_keywords(text : String, max_count? : Int32) -> Array[String] {
   let order : Array[String] = []
   let counts : Map[String, Int32] = Map([])
   for w in ascii_words(text) {
-    if w.length() < 3 || is_stopword(w) {
+    if !is_usable_term(w) || is_stopword(w) {
       continue
     }
     let n = match counts.get(w) {
@@ -124,7 +112,7 @@ pub fn term_stats(text : String, max_terms? : Int32) -> (Array[String], Int32) {
   let counts : Map[String, Int32] = Map([])
   let mut total = 0
   for w in ascii_words(text) {
-    if w.length() < 3 || is_stopword(w) {
+    if !is_usable_term(w) || is_stopword(w) {
       continue
     }
     total = total + 1
