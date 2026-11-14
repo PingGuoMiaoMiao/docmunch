@@ -210,13 +210,17 @@ async fn cmd_markdown(input : String, args : Array[String]) -> Unit {
     Some(html) => html
     None => return
   }
-  let ex = @extract.extract(source, input)
-  let base = if input.has_prefix("http://") || input.has_prefix("https://") {
-    input
+  // A Markdown source is already the target format; converting it as HTML would
+  // mangle it into an empty document.
+  let is_markdown = input.has_suffix(".md") || input.has_suffix(".markdown")
+  let is_url = input.has_prefix("http://") || input.has_prefix("https://")
+  let markdown = if is_markdown {
+    source
   } else {
-    ""
+    let ex = @extract.extract(source, input)
+    let base = if is_url { input } else { "" }
+    @md.html_to_markdown(ex.html, base_url=base)
   }
-  let markdown = @md.html_to_markdown(ex.html, base_url=base)
   match option_value(args, "--out") {
     Some(path) =>
       try {
@@ -280,25 +284,31 @@ fn repo_for(input : String) -> String {
 
 ///|
 async fn markdown_of(input : String, args : Array[String]) -> String? {
-  if input.has_suffix(".md") || input.has_suffix(".markdown") {
-    let text = @fs.read_file(input).text() catch {
-      e => {
-        fail("error=read \{e.to_string()}")
-        return None
+  // URL first: a remote path ending in `.md` is a document to fetch, not a local
+  // file to open (checking the suffix first used to send it to @fs.open).
+  let is_url = input.has_prefix("http://") || input.has_prefix("https://")
+  let is_markdown = input.has_suffix(".md") || input.has_suffix(".markdown")
+  if is_markdown {
+    // Already Markdown: index the bytes as-is on both paths. Running it through
+    // the HTML extractor would treat the source as markup and yield nothing.
+    if is_url {
+      load_document(input, args)
+    } else {
+      let text = @fs.read_file(input).text() catch {
+        e => {
+          fail("error=read \{e.to_string()}")
+          return None
+        }
       }
+      Some(text)
     }
-    Some(text)
   } else {
     let html = match load_document(input, args) {
       Some(h) => h
       None => return None
     }
     let ex = @extract.extract(html, input)
-    let base = if input.has_prefix("http://") || input.has_prefix("https://") {
-      input
-    } else {
-      ""
-    }
+    let base = if is_url { input } else { "" }
     Some(@md.html_to_markdown(ex.html, base_url=base))
   }
 }
