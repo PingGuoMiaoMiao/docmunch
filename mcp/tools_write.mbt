@@ -89,3 +89,65 @@ fn register_delete_index(
     },
   )
 }
+
+///|
+fn register_index_dir(
+  server : @mcpsdk.MCPServer,
+  root : String,
+  gate : Array[@async.Mutex],
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+  server.tool(
+    "index_dir",
+    "Index every Markdown/HTML file under a local directory (recursive).",
+    schema(
+      prop_str("path", "Directory to walk.") +
+      "," +
+      prop_str("repo", "Optional repo name; defaults to 'local'."),
+      "\"path\"",
+    ),
+    async fn(_ctx, args) {
+      gate[0].acquire()
+      defer gate[0].release()
+      let input = arg_str(args, "path")
+      if input == "" {
+        return failure("missing required argument: path")
+      }
+      let repo = match arg_opt_str(args, "repo") {
+        Some(r) => r
+        None => "local"
+      }
+      let normalized = @http.normalize_local_path(input)
+      let base = if normalized.has_suffix("/") {
+        normalized[0:normalized.length() - 1].to_owned()
+      } else {
+        normalized
+      }
+      let files : Array[String] = []
+      @index.collect_documents(base, "", files)
+      if files.length() == 0 {
+        return failure("no indexable documents under \{base}")
+      }
+      let mut ok_count = 0
+      let failed : Array[String] = []
+      for rel in files {
+        let doc_path = base + "/" + rel
+        match index_inputs(root, doc_path, repo, doc_path) {
+          Ok(_) => ok_count = ok_count + 1
+          Err(_) => failed.push(rel)
+        }
+      }
+      let sb = StringBuilder::StringBuilder()
+      sb.write_string(
+        "{\"repo\":\{@text.json_escape(repo)},\"files\":\{files.length()},\"indexed\":\{ok_count},\"failed\":[",
+      )
+      for i = 0; i < failed.length(); i = i + 1 {
+        if i > 0 {
+          sb.write_char(',')
+        }
+        sb.write_string(@text.json_escape(failed[i]))
+      }
+      sb.write_string("]}")
+      Ok(text_result(sb.to_string()))
+    },
+  )
+}

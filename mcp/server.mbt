@@ -181,6 +181,7 @@ pub fn build_server(
   server = register_search_sections(server, root)
   server = register_index_url(server, root, index_gate)
   server = register_index_local(server, root, index_gate)
+  server = register_index_dir(server, root, index_gate)
   server = register_delete_index(server, root, index_gate)
   match auth_token {
     Some(expected) =>

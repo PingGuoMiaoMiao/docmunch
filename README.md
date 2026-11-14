@@ -30,6 +30,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P14 | development log published (docs/devlog.md) | ✅ done |
 | P15 | incremental skip (content-hash), Markdown pass-through, missing-cache errors | ✅ done |
 | P16 | optional bearer-token guard for the MCP HTTP endpoint | ✅ done |
+| P17 | `index-dir` (recursive directory indexing) for the CLI and MCP | ✅ done |
 
 ## Install
 
@@ -66,6 +67,7 @@ python tools/toc_check.py
 
 # index -> search -> retrieve (O(1) byte-range read, hash-verified)
 moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
+moon run cmd/main --target native -- index-dir docs --repo local     # recursive
 moon run cmd/main --target native -- search local readability          # BM25 by default
 moon run cmd/main --target native -- search local readability --mode weighted
 moon run cmd/main --target native -- section local "<id from search>" --verify

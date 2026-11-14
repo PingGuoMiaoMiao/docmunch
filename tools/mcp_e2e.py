@@ -127,6 +127,7 @@ def main() -> int:
                 "get_section_context",
                 "get_section_descendants",
                 "get_toc",
+                "index_dir",
                 "index_local",
                 "index_url",
                 "list_docs",
@@ -135,7 +136,7 @@ def main() -> int:
                 "search_titles",
             ]
         )
-        check("tools/list has 12 tools", names == expected, f"got {names}")
+        check("tools/list has 13 tools", names == expected, f"got {names}")
 
         fixture = "fixtures/markdown/readability-readme.md"
         indexed = client.call(

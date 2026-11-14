@@ -261,3 +261,25 @@ async test "changed bytes are re-parsed" {
   assert_true(changed)
   assert_eq(index.sections.length(), 2)
 }
+
+///|
+async test "collect_documents walks subdirectories and skips noise" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  @fs.mkdir(root + "/sub", recursive=true, allow_exist=true)
+  @fs.mkdir(root + "/node_modules", recursive=true, allow_exist=true)
+  @fs.write_file(root + "/a.md", "# A\n", create_mode=CreateOrTruncate)
+  @fs.write_file(root + "/sub/b.html", "<p>x</p>", create_mode=CreateOrTruncate)
+  @fs.write_file(root + "/sub/skip.txt", "no", create_mode=CreateOrTruncate)
+  @fs.write_file(
+    root + "/node_modules/c.md",
+    "# C\n",
+    create_mode=CreateOrTruncate,
+  )
+  let out : Array[String] = []
+  collect_documents(root, "", out)
+  assert_true(out.contains("a.md"))
+  assert_true(out.contains("sub/b.html"))
+  assert_false(out.contains("sub/skip.txt"))
+  assert_false(out.contains("node_modules/c.md"))
+}

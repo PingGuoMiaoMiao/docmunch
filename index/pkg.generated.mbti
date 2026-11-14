@@ -14,6 +14,8 @@ pub async fn build_index_checked(String, String, String, String) -> (@core.DocIn
 
 pub fn children_of(@core.DocIndex, @core.Section) -> Array[@core.Section]
 
+pub async fn collect_documents(String, String, Array[String]) -> Unit
+
 pub async fn delete_repo(String, String) -> Unit
 
 pub fn descendants_of(@core.DocIndex, @core.Section) -> Array[@core.Section]
@@ -23,6 +25,8 @@ pub async fn get_section_text(String, String, @core.DocIndex, String, verify? : 
 pub async fn has_raw(String, String, String) -> Bool
 
 pub fn index_file_path(String, String) -> String
+
+pub fn is_indexable_name(String) -> Bool
 
 pub async fn list_repos(String) -> Array[String]
 
@@ -49,6 +53,8 @@ pub fn search_titles(@core.DocIndex, String, limit? : Int32) -> Array[@core.Sect
 pub fn search_with_mode(@core.DocIndex, String, SearchMode, max_results? : Int32) -> Array[SearchHit]
 
 pub fn section_by_id(@core.DocIndex, String) -> @core.Section?
+
+pub fn skip_dir_name(String) -> Bool
 
 pub fn words_of(String) -> Array[String]
 

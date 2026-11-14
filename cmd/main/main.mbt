@@ -16,6 +16,7 @@ fn usage() -> Unit {
   println("  docmunch markdown <url|file> [--out PATH] [--allow-private]")
   println("  docmunch toc <file.md> [--verify]")
   println("  docmunch index <url|file> [--repo NAME] [--root DIR]")
+  println("  docmunch index-dir <dir> [--repo NAME] [--root DIR]")
   println(
     "  docmunch search <repo> <query> [--root DIR] [--mode bm25|weighted]",
   )
@@ -341,6 +342,60 @@ async fn cmd_index(input : String, args : Array[String]) -> Unit {
 }
 
 ///|
+async fn cmd_index_dir(input : String, args : Array[String]) -> Unit {
+  let root = root_of(args)
+  let repo = match option_value(args, "--repo") {
+    Some(v) => v
+    None => "local"
+  }
+  let normalized = @http.normalize_local_path(input)
+  let base = if normalized.has_suffix("/") {
+    normalized[0:normalized.length() - 1].to_owned()
+  } else {
+    normalized
+  }
+  let files : Array[String] = []
+  @index.collect_documents(base, "", files)
+  if files.length() == 0 {
+    fail("error=no_documents dir=\{base}")
+    return
+  }
+  let mut changed_count = 0
+  let mut skipped_count = 0
+  let mut failed_count = 0
+  let mut docs = 0
+  let mut sections = 0
+  for rel in files {
+    let doc_path = base + "/" + rel
+    let text = match markdown_of(doc_path, args) {
+      Some(t) => t
+      None => {
+        failed_count = failed_count + 1
+        continue
+      }
+    }
+    let result = @index.build_index_checked(root, repo, doc_path, text) catch {
+      e => {
+        fail("error=index doc=\{doc_path} \{e.to_string()}")
+        failed_count = failed_count + 1
+        continue
+      }
+    }
+    let (index, changed) = result
+    if changed {
+      changed_count = changed_count + 1
+    } else {
+      skipped_count = skipped_count + 1
+    }
+    docs = index.doc_paths.length()
+    sections = index.sections.length()
+  }
+  println(
+    "repo=\{repo} files=\{files.length()} changed=\{changed_count} skipped=\{skipped_count} failed=\{failed_count} docs=\{docs} sections=\{sections} root=\{root}",
+  )
+}
+
+///|
 async fn cmd_search(
   repo : String,
   query : String,
@@ -511,6 +566,12 @@ async fn main {
       return
     }
     cmd_index(args[2], args)
+  } else if cmd == "index-dir" {
+    if args.length() < 3 {
+      usage()
+      return
+    }
+    cmd_index_dir(args[2], args)
   } else if cmd == "search" {
     if args.length() < 4 {
       usage()

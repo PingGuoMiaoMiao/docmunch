@@ -111,7 +111,7 @@ def main() -> int:
 
         tools = post(url, "tools/list", {}, 2)["result"]
         names = sorted(t["name"] for t in tools.get("tools", []))
-        check("tools/list has 12 tools", len(names) == 12, str(names))
+        check("tools/list has 13 tools", len(names) == 13, str(names))
 
         repo = "http-e2e"
         idx = post(
