@@ -28,6 +28,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P12 | BM25 search (k1=1.2, b=0.75, field weights), index v3 | ✅ done |
 | P13 | 12 MCP tools (added get_doc / list_docs / get_section_descendants / search_titles) | ✅ done |
 | P14 | development log published (docs/devlog.md) | ✅ done |
+| P15 | incremental skip (content-hash), Markdown pass-through, missing-cache errors | ✅ done |
 
 ## Install
 
