@@ -237,3 +237,27 @@ async test "search_titles puts the exact match first and ignores bodies" {
   // A term that only exists in a body is not a title hit.
   assert_eq(search_titles(index, "more").length(), 0)
 }
+
+///|
+async test "re-indexing unchanged bytes skips the re-parse" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text = "# A\n\nsame text\n\n## B\n\nmore\n"
+  let (_, first) = build_index_checked(root, "inc", "doc.md", text)
+  assert_true(first)
+  let (index, second) = build_index_checked(root, "inc", "doc.md", text)
+  assert_false(second)
+  assert_eq(index.sections.length(), 2)
+}
+
+///|
+async test "changed bytes are re-parsed" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  ignore(build_index_checked(root, "inc", "doc.md", "# A\n\none\n"))
+  let (index, changed) = build_index_checked(
+    root, "inc", "doc.md", "# A\n\none\n\n## B\n\ntwo\n",
+  )
+  assert_true(changed)
+  assert_eq(index.sections.length(), 2)
+}

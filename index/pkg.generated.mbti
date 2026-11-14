@@ -10,6 +10,8 @@ pub fn ancestors_of(@core.DocIndex, @core.Section) -> Array[@core.Section]
 
 pub async fn build_index(String, String, String, String) -> @core.DocIndex
 
+pub async fn build_index_checked(String, String, String, String) -> (@core.DocIndex, Bool)
+
 pub fn children_of(@core.DocIndex, @core.Section) -> Array[@core.Section]
 
 pub async fn delete_repo(String, String) -> Unit

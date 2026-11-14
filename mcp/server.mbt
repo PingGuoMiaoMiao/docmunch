@@ -114,12 +114,14 @@ async fn index_inputs(
     let text = @fs.read_file(input).text() catch {
       e => return failure("read failed: \{e.to_string()}")
     }
-    let index = @index.build_index(root, repo, doc_path, text) catch {
+    let (index, changed) = @index.build_index_checked(
+      root, repo, doc_path, text,
+    ) catch {
       e => return failure("index failed: \{e.to_string()}")
     }
     return Ok(
       text_result(
-        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()}}",
+        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
       ),
     )
   }
@@ -136,12 +138,14 @@ async fn index_inputs(
   let ex = @extract.extract(html, input)
   let base = if is_url { input } else { "" }
   let markdown = @md.html_to_markdown(ex.html, base_url=base)
-  let index = @index.build_index(root, repo, doc_path, markdown) catch {
+  let (index, changed) = @index.build_index_checked(
+    root, repo, doc_path, markdown,
+  ) catch {
     e => return failure("index failed: \{e.to_string()}")
   }
   Ok(
     text_result(
-      "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"title\":\{@text.json_escape(ex.title)},\"sections\":\{index.sections.length()}}",
+      "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"title\":\{@text.json_escape(ex.title)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
     ),
   )
 }

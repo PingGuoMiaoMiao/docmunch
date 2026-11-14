@@ -319,14 +319,14 @@ async fn cmd_index(input : String, args : Array[String]) -> Unit {
     Some(t) => t
     None => return
   }
-  let index = @index.build_index(root, repo, doc_path, text) catch {
+  let (index, changed) = @index.build_index_checked(root, repo, doc_path, text) catch {
     e => {
       fail("error=index \{e.to_string()}")
       return
     }
   }
   println(
-    "repo=\{repo} doc=\{doc_path} sections=\{index.sections.length()} docs=\{index.doc_paths.length()} root=\{root}",
+    "repo=\{repo} doc=\{doc_path} sections=\{index.sections.length()} docs=\{index.doc_paths.length()} changed=\{changed} root=\{root}",
   )
 }
 

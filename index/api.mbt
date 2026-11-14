@@ -9,8 +9,35 @@ pub async fn build_index(
   doc_path : String,
   text : String,
 ) -> @core.DocIndex {
-  let sections = @section.split_document(repo, doc_path, text)
+  let (index, _changed) = build_index_checked(root, repo, doc_path, text)
+  index
+}
+
+///|
+/// Same as `build_index`, but also reports whether anything was re-parsed.
+///
+/// A document whose bytes are unchanged does not get re-split: the raw cache is
+/// the exact text the offsets point into, so comparing its sha256 with the
+/// incoming text is enough to prove the index is current (D51).
+pub async fn build_index_checked(
+  root : String,
+  repo : String,
+  doc_path : String,
+  text : String,
+) -> (@core.DocIndex, Bool) {
+  let incoming = @section.sha256_of(text)
   let existing = load_index(root, repo)
+  match existing {
+    Some(index) =>
+      if index.doc_paths.contains(doc_path) {
+        let cached = read_document_text(root, repo, doc_path) catch { _ => "" }
+        if cached != "" && @section.sha256_of(cached) == incoming {
+          return (index, false)
+        }
+      }
+    None => ()
+  }
+  let sections = @section.split_document(repo, doc_path, text)
   let merged : Array[@core.Section] = []
   let docs : Array[String] = []
   match existing {
@@ -41,7 +68,7 @@ pub async fn build_index(
     index_version: @core.index_version,
   }
   save_index(root, repo, index)
-  index
+  (index, true)
 }
 
 ///|
