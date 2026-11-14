@@ -382,3 +382,11 @@
 - **决策**：默认走 BM25（`k1=1.2`、`b=0.75`，字段权重 title 3 / path 2 / body 1）；词频在分节时算好存进索引（`terms` 重复展开 + `tokens`），检索时只读元数据。旧打分保留为 `SearchMode::Weighted`，CLI `--mode`、MCP `search_sections.mode` 可切换。索引版本 2 → 3。
 - **后果**：得分有梯度（89/87/63/63），稀有词自动获得更高权重；索引体积略增（readability 6.8 KB → 约 9 KB）；旧索引需重建（fail-closed 已保证）。
 - **被否**：引入倒排表/posting cache —— 千级小节内查询仍是毫秒级，收益不足以抵消新数据结构与失效逻辑；也否掉了纯 embedding 方案（违背「零外部服务」定位）。
+---
+
+## D52 — MCP HTTP 用 Bearer Token 保护，stdio 不动
+
+- **背景**：`--http` 会把索引（可能含内部文档）暴露在一个本地端口上，之前没有任何鉴权；已知差距里一直挂着这一条。
+- **决策**：新增 `--auth-token <T>` / 环境变量 `DOCMUNCH_MCP_TOKEN`，非空时给 HTTP 传输挂上 `AuthConfig`（`colmugx/mcp/transport`）：只有 `Authorization: Bearer <T>` 完全匹配才放行，否则 401。stdio 模式不受影响——它本来就是父进程独占的管道。
+- **后果**：默认仍然无鉴权（本机单用户场景不打扰），但一台机器暴露端口时可以一行命令加上；新增 `tools/mcp_auth_e2e.py` 断言「无 token 401 / 错 token 401 / 对 token 200」。
+- **被否**：默认强制随机 token —— 会破坏「`moon run … mcp` 直接能连」的开箱体验；也否掉了 OAuth（本项目没有授权服务器，属于过度设计）。

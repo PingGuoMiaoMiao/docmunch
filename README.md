@@ -29,6 +29,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P13 | 12 MCP tools (added get_doc / list_docs / get_section_descendants / search_titles) | ✅ done |
 | P14 | development log published (docs/devlog.md) | ✅ done |
 | P15 | incremental skip (content-hash), Markdown pass-through, missing-cache errors | ✅ done |
+| P16 | optional bearer-token guard for the MCP HTTP endpoint | ✅ done |
 
 ## Install
 
@@ -74,6 +75,8 @@ moon run cmd/main --target native -- delete local
 # MCP server: stdio (default) or Streamable HTTP
 python tools/mcp_e2e.py
 moon run cmd/main --target native -- mcp --http --port 4240 --root .doc-index
+# optional: require a bearer token on the HTTP endpoint
+moon run cmd/main --target native -- mcp --http --port 4240 --auth-token "$env:DOCMUNCH_MCP_TOKEN"
 python tools/mcp_http_e2e.py
 
 # compare extraction against the Node Readability oracle

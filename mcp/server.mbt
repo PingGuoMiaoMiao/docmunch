@@ -158,7 +158,13 @@ async fn index_inputs(
 ///
 /// Every tool lives in `tools_read.mbt` / `tools_write.mbt`; this function only
 /// assembles them, so adding a tool touches one registration line here.
-pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
+///
+/// `auth_token` guards the HTTP transport with a bearer token (D52). stdio is
+/// left alone: it is already a private pipe owned by the parent process.
+pub fn build_server(
+  root : String,
+  auth_token? : String,
+) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   let mut server = @mcpsdk.MCPServer::MCPServer("docmunch", "0.1.0")
   // Serialize index mutations: the HTTP transport handles requests concurrently
   // and index writes are read-modify-write (D44). The array keeps one shared
@@ -176,5 +182,22 @@ pub fn build_server(root : String) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server = register_index_url(server, root, index_gate)
   server = register_index_local(server, root, index_gate)
   server = register_delete_index(server, root, index_gate)
+  match auth_token {
+    Some(expected) =>
+      if expected != "" {
+        let auth = @transport.AuthConfig::AuthConfig(
+          authenticate=fn(token) {
+            if token == expected {
+              Some(@mcpsdk.Principal::new("docmunch-http-client"))
+            } else {
+              None
+            }
+          },
+          resource_metadata_url="https://github.com/PingGuoMiaoMiao/docmunch",
+        )
+        server = server.with_auth(auth)
+      }
+    None => ()
+  }
   server
 }

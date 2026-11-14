@@ -427,7 +427,15 @@ async fn cmd_repos(args : Array[String]) -> Unit {
 ///|
 async fn cmd_mcp(args : Array[String]) -> Unit {
   let root = root_of(args)
-  let server = @mcp.build_server(root) catch {
+  let auth_token = match option_value(args, "--auth-token") {
+    Some(v) => Some(v)
+    None =>
+      match @env.get_env_var("DOCMUNCH_MCP_TOKEN") {
+        Some(v) => Some(v)
+        None => None
+      }
+  }
+  let server = @mcp.build_server(root, auth_token?) catch {
     e => {
       fail("error=build \{e.message()}")
       return

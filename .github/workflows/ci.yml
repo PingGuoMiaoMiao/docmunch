@@ -55,3 +55,6 @@ jobs:
 
       - name: MCP end-to-end (HTTP)
         run: python tools/mcp_http_e2e.py
+
+      - name: MCP auth end-to-end
+        run: python tools/mcp_auth_e2e.py
