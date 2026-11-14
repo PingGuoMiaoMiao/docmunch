@@ -9,7 +9,9 @@ pub fn is_indexable_name(name : String) -> Bool {
   lower.has_suffix(".md") ||
   lower.has_suffix(".markdown") ||
   lower.has_suffix(".html") ||
-  lower.has_suffix(".htm")
+  lower.has_suffix(".htm") ||
+  lower.has_suffix(".ipynb") ||
+  lower.has_suffix(".rst")
 }
 
 ///|

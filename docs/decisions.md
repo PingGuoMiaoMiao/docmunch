@@ -390,3 +390,13 @@
 - **决策**：新增 `--auth-token <T>` / 环境变量 `DOCMUNCH_MCP_TOKEN`，非空时给 HTTP 传输挂上 `AuthConfig`（`colmugx/mcp/transport`）：只有 `Authorization: Bearer <T>` 完全匹配才放行，否则 401。stdio 模式不受影响——它本来就是父进程独占的管道。
 - **后果**：默认仍然无鉴权（本机单用户场景不打扰），但一台机器暴露端口时可以一行命令加上；新增 `tools/mcp_auth_e2e.py` 断言「无 token 401 / 错 token 401 / 对 token 200」。
 - **被否**：默认强制随机 token —— 会破坏「`moon run … mcp` 直接能连」的开箱体验；也否掉了 OAuth（本项目没有授权服务器，属于过度设计）。
+---
+
+## D53 — RST 与 Jupyter 用"降级转换"而不是拒绝
+
+- **背景**：`index-dir` 只认 `.md/.html`，`.rst`（Python 生态文档源）和 `.ipynb`（AI 场景常见）会被静默跳过——实测一个只含这两种文件的目录直接报 `no_documents`。
+- **决策**：在 `md` 包内各写一个转换器：
+  - `ipynb_to_markdown`：markdown cell 原样透传，code cell 变成围栏代码块（语言取 `metadata.kernelspec.language`），**输出 cell 一律丢弃**（表格/图片/traceback 对检索是噪声）。JSON 不合法时返回 `None`，由调用方报错，不索引空文档。
+  - `rst_to_markdown`：标题按 RST 规则还原（标题行 + 装饰线，**装饰字符首次出现的顺序决定层级**）；`.. code-block:: lang` / `.. code::` 变成围栏块；以 `::` 结尾的段落后的缩进块变成无语言围栏；其余内容降级为纯文本而不是丢弃。
+- **后果**：三种格式混合的目录可以一次索引（实测 3 文件 → 4 节）；两个转换器各有 2–3 个单测；转换器只做"让文档可被分节"的最低限度，不追求 RST 全语法。
+- **被否**：引入完整 RST/docutils 语义（Sphinx 扩展、交叉引用、脚注）—— 那是一个独立项目；也否掉了"遇到不支持的格式就报错"，因为文档目录里混格式是常态。

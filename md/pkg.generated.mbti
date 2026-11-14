@@ -4,6 +4,10 @@ package "PingGuoMiaoMiao/docmunch/md"
 // Values
 pub fn html_to_markdown(String, base_url? : String) -> String
 
+pub fn ipynb_to_markdown(String) -> String?
+
+pub fn rst_to_markdown(String) -> String
+
 // Errors
 
 // Types and methods

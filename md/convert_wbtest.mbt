@@ -82,3 +82,77 @@ test "relative links are absolutized against the page url" {
   assert_true(md.contains("(https://example.com/docs/x)"))
   assert_true(md.contains("(https://example.com/guide/next.html)"))
 }
+
+///|
+test "notebook: markdown cells pass through, code cells become fences" {
+  let src =
+    #|{
+    #|  "cells": [
+    #|    {"cell_type": "markdown", "source": ["# Intro\n", "hello"]},
+    #|    {"cell_type": "code", "source": ["print(1)"]},
+    #|    {"cell_type": "raw", "source": ["ignored"]}
+    #|  ],
+    #|  "metadata": {"kernelspec": {"language": "python"}},
+    #|  "nbformat": 4
+    #|}
+  let md = match ipynb_to_markdown(src) {
+    Some(v) => v
+    None => abort("conversion failed")
+  }
+  assert_true(md.contains("# Intro"))
+  assert_true(md.contains("hello"))
+  assert_true(md.contains("```python"))
+  assert_true(md.contains("print(1)"))
+  assert_false(md.contains("ignored"))
+}
+
+///|
+test "notebook: malformed json yields none" {
+  assert_true(ipynb_to_markdown("{not json") is None)
+  assert_true(ipynb_to_markdown("[]") is None)
+}
+
+///|
+test "rst: titles become headings in first-appearance order" {
+  let src =
+    #|Title
+    #|=====
+    #|
+    #|body
+    #|
+    #|Sub
+    #|---
+    #|
+    #|more
+  let md = rst_to_markdown(src)
+  assert_true(md.contains("# Title"))
+  assert_true(md.contains("## Sub"))
+  assert_true(md.contains("body"))
+}
+
+///|
+test "rst: code-block directive becomes a fenced block" {
+  let src =
+    #|Example
+    #|=======
+    #|
+    #|.. code-block:: python
+    #|
+    #|   print(1)
+    #|   print(2)
+  let md = rst_to_markdown(src)
+  assert_true(md.contains("```python"))
+  assert_true(md.contains("print(1)"))
+  assert_false(md.contains(".. code-block"))
+}
+
+///|
+test "rst: literal block after :: becomes a fence" {
+  let src =
+    #|Run this::
+    #|
+    #|   moon test
+  let md = rst_to_markdown(src)
+  assert_true(md.contains("```"))
+  assert_true(md.contains("moon test"))
+}

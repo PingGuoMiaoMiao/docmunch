@@ -110,6 +110,41 @@ async fn index_inputs(
 ) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
   let opts = @http.default_fetch_options()
   let is_url = input.has_prefix("http://") || input.has_prefix("https://")
+  if !is_url && input.has_suffix(".rst") {
+    let raw = @fs.read_file(input).text() catch {
+      e => return failure("read failed: \{e.to_string()}")
+    }
+    let markdown = @md.rst_to_markdown(raw)
+    let (index, changed) = @index.build_index_checked(
+      root, repo, doc_path, markdown,
+    ) catch {
+      e => return failure("index failed: \{e.to_string()}")
+    }
+    return Ok(
+      text_result(
+        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
+      ),
+    )
+  }
+  if !is_url && input.has_suffix(".ipynb") {
+    let raw = @fs.read_file(input).text() catch {
+      e => return failure("read failed: \{e.to_string()}")
+    }
+    let markdown = match @md.ipynb_to_markdown(raw) {
+      Some(v) => v
+      None => return failure("notebook parse failed: \{input}")
+    }
+    let (index, changed) = @index.build_index_checked(
+      root, repo, doc_path, markdown,
+    ) catch {
+      e => return failure("index failed: \{e.to_string()}")
+    }
+    return Ok(
+      text_result(
+        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
+      ),
+    )
+  }
   if !is_url && (input.has_suffix(".md") || input.has_suffix(".markdown")) {
     let text = @fs.read_file(input).text() catch {
       e => return failure("read failed: \{e.to_string()}")

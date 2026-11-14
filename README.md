@@ -31,6 +31,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P15 | incremental skip (content-hash), Markdown pass-through, missing-cache errors | ✅ done |
 | P16 | optional bearer-token guard for the MCP HTTP endpoint | ✅ done |
 | P17 | `index-dir` (recursive directory indexing) for the CLI and MCP | ✅ done |
+| P18 | RST and Jupyter notebook sources (degrade-to-text converters) | ✅ done |
 
 ## Install
 

@@ -2,6 +2,7 @@ import {
   "moonbit-community/html",
   "moonbit-community/html/src" @htmlsrc,
   "moonbit-community/cmark/cmark_html",
+  "moonbitlang/core/json",
   "tonyfettes/url",
   "PingGuoMiaoMiao/docmunch/core/text",
   "PingGuoMiaoMiao/docmunch/extract",

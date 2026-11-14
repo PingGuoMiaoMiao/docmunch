@@ -289,7 +289,25 @@ async fn markdown_of(input : String, args : Array[String]) -> String? {
   // file to open (checking the suffix first used to send it to @fs.open).
   let is_url = input.has_prefix("http://") || input.has_prefix("https://")
   let is_markdown = input.has_suffix(".md") || input.has_suffix(".markdown")
-  if is_markdown {
+  if input.has_suffix(".rst") {
+    let raw = match load_document(input, args) {
+      Some(v) => v
+      None => return None
+    }
+    Some(@md.rst_to_markdown(raw))
+  } else if input.has_suffix(".ipynb") {
+    let raw = match load_document(input, args) {
+      Some(v) => v
+      None => return None
+    }
+    match @md.ipynb_to_markdown(raw) {
+      Some(markdown) => Some(markdown)
+      None => {
+        fail("error=notebook_parse doc=\{input}")
+        None
+      }
+    }
+  } else if is_markdown {
     // Already Markdown: index the bytes as-is on both paths. Running it through
     // the HTML extractor would treat the source as markup and yield nothing.
     if is_url {
