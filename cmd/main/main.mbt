@@ -379,6 +379,16 @@ async fn cmd_section(repo : String, id : String, args : Array[String]) -> Unit {
       return
     }
   }
+  match @index.section_by_id(index, id) {
+    Some(s) =>
+      if !@index.has_raw(root, repo, s.doc_path) {
+        fail(
+          "error=cache_missing doc=\{s.doc_path} hint=re-run `docmunch index` for this document",
+        )
+        return
+      }
+    None => ()
+  }
   let (text, ok) = @index.get_section_text(
     root,
     repo,

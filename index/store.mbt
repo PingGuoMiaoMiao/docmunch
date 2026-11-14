@@ -251,3 +251,12 @@ pub async fn read_document_text(
   }
   @fs.read_file(path).text()
 }
+
+///|
+/// True when the raw cache for `doc_path` is present. Retrieval needs it: the
+/// byte offsets in the index only make sense against that exact file.
+pub async fn has_raw(root : String, repo : String, doc_path : String) -> Bool {
+  @fs.exists(raw_file_path(root, repo, doc_path)) catch {
+    _ => false
+  }
+}

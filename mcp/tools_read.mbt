@@ -288,6 +288,9 @@ fn register_get_doc(
       if !index.doc_paths.contains(path) {
         return failure("document not indexed: \{path}")
       }
+      if !@index.has_raw(root, repo, path) {
+        return failure("cache missing for \{path}; re-index the document")
+      }
       let text = @index.read_document_text(root, repo, path) catch {
         e => return failure("read failed: \{e.to_string()}")
       }
