@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The acceptance self-check reads the real commit history.
+          fetch-depth: 0
 
       - name: Set up MoonBit
         run: |

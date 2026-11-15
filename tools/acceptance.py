@@ -126,6 +126,10 @@ def check_history(root: Path, since: str):
     code, text, _ = git(root, "rev-parse", "--is-inside-work-tree")
     if code != 0 or "true" not in text.lower():
         return "FAIL", "not a git repository"
+    # A shallow clone (CI default) hides the real history; say so instead of
+    # failing a submission that is fine.
+    _, shallow, _ = git(root, "rev-parse", "--is-shallow-repository")
+    shallow_clone = "true" in shallow.lower()
     _, log, _ = git(root, "log", "--oneline")
     commits = len([line for line in log.splitlines() if line.strip()])
     _, dirty, _ = git(root, "status", "--porcelain")
@@ -135,6 +139,8 @@ def check_history(root: Path, since: str):
         _, recent, _ = git(root, "log", "--oneline", f"--since={since}")
         window = len([line for line in recent.splitlines() if line.strip()])
     evidence = f"{commits} commits total, {window} since {since or 'start'}, {dirty_count} uncommitted paths"
+    if shallow_clone and commits < 3:
+        return "WARN", evidence + " (shallow clone: run with fetch-depth: 0)"
     if commits < 3:
         return "FAIL", evidence
     if dirty_count > 0:
