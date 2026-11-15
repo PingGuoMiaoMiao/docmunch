@@ -18,7 +18,17 @@ import re
 import subprocess
 import sys
 
-EXE = pathlib.Path("_build/native/debug/build/cmd/main") / ("main.exe" if os.name == "nt" else "main")
+def _resolve_exe():
+    """moon names the binary main.exe on every platform we build on."""
+    base = pathlib.Path("_build/native/debug/build/cmd/main")
+    for name in ("main.exe", "main"):
+        candidate = base / name
+        if candidate.exists():
+            return candidate
+    return base / "main.exe"
+
+
+EXE = _resolve_exe()
 LINE = re.compile(
     r"^(?P<id>.+?)\tlevel=(?P<level>\d+)\tbytes=(?P<start>\d+)-(?P<end>\d+)\thash=(?P<hash>[0-9a-f]{64})\ttitle=(?P<title>.*)$"
 )

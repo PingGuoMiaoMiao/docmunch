@@ -17,7 +17,17 @@ import subprocess
 import sys
 import time
 
-EXE = pathlib.Path("_build/native/debug/build/cmd/main") / ("main.exe" if os.name == "nt" else "main")
+def _resolve_exe():
+    """moon names the binary main.exe on every platform we build on."""
+    base = pathlib.Path("_build/native/debug/build/cmd/main")
+    for name in ("main.exe", "main"):
+        candidate = base / name
+        if candidate.exists():
+            return candidate
+    return base / "main.exe"
+
+
+EXE = _resolve_exe()
 ROOT = ".bench-index"
 FIXTURES = sorted(pathlib.Path("fixtures/html").glob("*.html"))
 
