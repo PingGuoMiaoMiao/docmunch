@@ -20,8 +20,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Toolchain versions
-        run: moon version --all
+      - name: Toolchain and registry
+        # `moon update` pulls the registry index; without it a clean runner
+        # cannot resolve any dependency ("module was not found in the registry").
+        run: |
+          moon version --all
+          moon update
 
       - name: Format
         run: moon fmt --check
