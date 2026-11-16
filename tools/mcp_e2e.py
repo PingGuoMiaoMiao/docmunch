@@ -166,6 +166,7 @@ def main() -> int:
         )
         found = json.loads(tool_text(hits)).get("hits", [])
         check("search_sections", len(found) >= 1 and found[0]["title"] == "Installation", str(found[:2]))
+        check("search hit carries its path", bool(found[0].get("path")), str(found[0]))
 
         section_id = found[0]["id"]
         got = client.call(

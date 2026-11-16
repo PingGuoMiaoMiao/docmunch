@@ -214,7 +214,7 @@ fn register_search_sections(
         }
         let h = hits[i]
         sb.write_string(
-          "{\"id\":\{@text.json_escape(h.id)},\"level\":\{h.level},\"title\":\{@text.json_escape(h.title)},\"score\":\{h.score}}",
+          "{\"id\":\{@text.json_escape(h.id)},\"level\":\{h.level},\"title\":\{@text.json_escape(h.title)},\"path\":\{@text.json_escape(h.doc_path)},\"score\":\{h.score}}",
         )
       }
       sb.write_string("]}")
