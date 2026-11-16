@@ -33,6 +33,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P17 | `index-dir` (recursive directory indexing) for the CLI and MCP | ✅ done |
 | P18 | RST and Jupyter notebook sources (degrade-to-text converters) | ✅ done |
 | P19 | CJK bigram tokenization so Chinese bodies are searchable (index v4) | ✅ done |
+| P20 | dogfood smoke: the project indexes its own docs (tools/selfindex.py) | ✅ done |
 
 ## Install
 
@@ -142,6 +143,7 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 
 ## Docs
 
+- [docs/demo-selfindex.md](docs/demo-selfindex.md) — the project indexing its own docs, with real numbers.
 - [docs/devlog.md](docs/devlog.md) — development log: what was tried, what broke, what I would do differently.
 - [docs/pre-research.md](docs/pre-research.md) — ecosystem survey, reference-implementation
   teardown, algorithm notes, and every source link used.

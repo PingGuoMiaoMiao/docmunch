@@ -65,3 +65,6 @@ jobs:
 
       - name: MCP auth end-to-end
         run: python tools/mcp_auth_e2e.py
+
+      - name: Self-index smoke (dogfood)
+        run: python tools/selfindex.py
