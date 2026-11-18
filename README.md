@@ -34,7 +34,8 @@ non-commercial-licensed, so only its *design* was studied).
 | P18 | RST and Jupyter notebook sources (degrade-to-text converters) | ✅ done |
 | P19 | CJK bigram tokenization so Chinese bodies are searchable (index v4) | ✅ done |
 | P20 | dogfood smoke: the project indexes its own docs (tools/selfindex.py) | ✅ done |
-| P21 | retrieval evidence: 3-system comparison + measured cost model (docs/evidence-retrieval.md) | ✅ done |
+| P21 | retrieval evidence: measured cost model, real-component comparison (docs/evidence-retrieval.md) | ✅ done |
+| P22 | in-process index cache for long-lived MCP servers (457x faster section fetch) | ✅ done |
 
 ## Install
 
