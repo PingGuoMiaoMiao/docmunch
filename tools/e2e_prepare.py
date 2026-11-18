@@ -170,6 +170,25 @@ def main():
 {whole}
 """)
 
+    # A realistic window budget: the whole corpus truncated to 8k tokens, which
+    # models the case where the corpus no longer fits and "paste everything"
+    # silently loses the answer.
+    ids = ENCODER.encode(whole)[:8000]
+    truncated = ENCODER.decode(ids)
+    write_pack("full_trunc", f"""# 任务
+
+回答下面 12 个问题。参考材料是语料的**前 8000 token**（受上下文窗口限制，之后被截断）。
+只根据材料回答；材料里没有的，在 `answer` 里写"无法确定"。
+
+## 问题
+
+{question_list}
+
+## 参考材料（截断后）
+
+{truncated}
+""")
+
     for strategy, units in (("recursive", rec_units), ("docmunch", sec_units)):
         parts = ["# 任务", "",
                  "回答下面 12 个问题。每个问题后面给出检索到的参考片段。",
