@@ -34,6 +34,7 @@ non-commercial-licensed, so only its *design* was studied).
 | P18 | RST and Jupyter notebook sources (degrade-to-text converters) | ✅ done |
 | P19 | CJK bigram tokenization so Chinese bodies are searchable (index v4) | ✅ done |
 | P20 | dogfood smoke: the project indexes its own docs (tools/selfindex.py) | ✅ done |
+| P21 | retrieval evidence: 3-system comparison + measured cost model (docs/evidence-retrieval.md) | ✅ done |
 
 ## Install
 
@@ -68,7 +69,7 @@ python tools/markdown_golden.py
 moon run cmd/main --target native -- toc fixtures/markdown/readability-readme.md --verify
 python tools/toc_check.py
 
-# index -> search -> retrieve (O(1) byte-range read, hash-verified)
+# index -> search -> retrieve (byte-range read, hash-verified)
 moon run cmd/main --target native -- index fixtures/markdown/readability-readme.md --repo local
 moon run cmd/main --target native -- index-dir docs --repo local     # recursive
 moon run cmd/main --target native -- search local readability          # BM25 by default
@@ -137,12 +138,13 @@ docs/      pre-research, decision records, competition notes
 - Byte offsets are **UTF-8 bytes**, not code units, so retrieval is
   `seek(byte_start)` + `read(byte_end - byte_start)`.
 - Index holds metadata only; bodies live in the raw cache.
-- Retrieval is O(1); re-index is gated by per-file `sha256` and an index version.
+- Retrieval reads only the section's byte range (measured read amplification 2% of the document); each call still loads and scans the section index, which grows with section count. Numbers: [docs/evidence-retrieval.md](docs/evidence-retrieval.md).
 
 Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md).
 
 ## Docs
 
+- [docs/evidence-retrieval.md](docs/evidence-retrieval.md) — recall, context completeness and measured retrieval cost vs chunking and full-document.
 - [docs/demo-selfindex.md](docs/demo-selfindex.md) — the project indexing its own docs, with real numbers.
 - [docs/devlog.md](docs/devlog.md) — development log: what was tried, what broke, what I would do differently.
 - [docs/pre-research.md](docs/pre-research.md) — ecosystem survey, reference-implementation

@@ -41,7 +41,7 @@ URL / 本地文件
   → HTML → CommonMark
   → 按标题分节（ATX/setext、感知代码围栏、跳过 frontmatter、字节偏移 + sha256）
   → 索引（元数据 JSON + 原文缓存 + 词频 + 关键词）
-  → 检索（BM25 / 加权，可解释）与 O(1) 取回
+  → 检索（BM25 / 加权，可解释）与按字节区间取回
   → 通过 MCP 暴露给 Claude Code / Cursor 等客户端
 ```
 
@@ -56,12 +56,14 @@ URL / 本地文件
 
 **当前状态**（截至 2026-11-16）：
 
-- 112 个测试全绿；GitHub Actions 每次 push 全绿；
+- 112 个测试全绿；GitHub Actions 每次 push 全绿（含检索对照实验与自举冒烟）；
 - 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.2.1`；
 - 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、
   词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
 - MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token）；
+- 检索对照实验（`docs/evidence-retrieval.md`）：同一语料、18 个问题，节级方案 hit@5 94% / 整节完整性 94%，
+  平均上下文 1,853 token；定长切块 72% / 67%；整篇塞入 100% 但 52,755 token（28 倍）；
 - 53 条 ADR 记录取舍与被否方案。
 
 **90 秒演示**：

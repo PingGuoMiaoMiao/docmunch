@@ -2,7 +2,7 @@
 //
 // A `Section` is a heading-delimited slice of one source document. It stores
 // byte offsets (UTF-8) into the cached raw file instead of the text itself, so
-// retrieval is O(1) seek+read and the index stays small.
+// retrieval reads only that byte range; the metadata index stays small.
 //
 // See docs/decisions.md (D7, D8) for why the id scheme mirrors jdocmunch.
 
