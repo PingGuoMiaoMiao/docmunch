@@ -3,6 +3,7 @@ package "PingGuoMiaoMiao/docmunch/index"
 
 import {
   "PingGuoMiaoMiao/docmunch/core",
+  "moonbitlang/async",
 }
 
 // Values
@@ -63,6 +64,20 @@ pub async fn write_raw(String, String, String, String) -> Unit
 // Errors
 
 // Types and methods
+pub(all) struct IndexCache {
+  entries : Map[String, IndexCacheEntry]
+  lock : @async.Mutex
+}
+pub async fn IndexCache::get(Self, String, String) -> @core.DocIndex?
+pub fn IndexCache::invalidate(Self, String) -> Unit
+pub fn IndexCache::new() -> Self
+pub fn IndexCache::size(Self) -> Int32
+
+pub(all) struct IndexCacheEntry {
+  mtime : Int64
+  index : @core.DocIndex
+}
+
 pub(all) struct SearchHit {
   id : String
   doc_path : String

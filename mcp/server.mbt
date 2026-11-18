@@ -102,11 +102,38 @@ fn sections_json(repo : String, sections : Array[@core.Section]) -> String {
 }
 
 ///|
+
+///|
+/// Success envelope for the write paths: invalidate the repo's cached index
+/// first, so the next read cannot see the pre-write snapshot.
+fn index_ok(
+  repo : String,
+  doc_path : String,
+  title : String,
+  sections : Int32,
+  changed : Bool,
+  cache : @index.IndexCache,
+) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
+  cache.invalidate(repo)
+  let title_part = if title == "" {
+    ""
+  } else {
+    "\"title\":\{@text.json_escape(title)},"
+  }
+  Ok(
+    text_result(
+      "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\{title_part}\"sections\":\{sections},\"changed\":\{changed}}",
+    ),
+  )
+}
+
+///|
 async fn index_inputs(
   root : String,
   input : String,
   repo : String,
   doc_path : String,
+  cache : @index.IndexCache,
 ) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
   let opts = @http.default_fetch_options()
   let is_url = input.has_prefix("http://") || input.has_prefix("https://")
@@ -120,11 +147,7 @@ async fn index_inputs(
     ) catch {
       e => return failure("index failed: \{e.to_string()}")
     }
-    return Ok(
-      text_result(
-        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
-      ),
-    )
+    return index_ok(repo, doc_path, "", index.sections.length(), changed, cache)
   }
   if !is_url && input.has_suffix(".ipynb") {
     let raw = @fs.read_file(input).text() catch {
@@ -139,11 +162,7 @@ async fn index_inputs(
     ) catch {
       e => return failure("index failed: \{e.to_string()}")
     }
-    return Ok(
-      text_result(
-        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
-      ),
-    )
+    return index_ok(repo, doc_path, "", index.sections.length(), changed, cache)
   }
   if !is_url && (input.has_suffix(".md") || input.has_suffix(".markdown")) {
     let text = @fs.read_file(input).text() catch {
@@ -154,11 +173,7 @@ async fn index_inputs(
     ) catch {
       e => return failure("index failed: \{e.to_string()}")
     }
-    return Ok(
-      text_result(
-        "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
-      ),
-    )
+    return index_ok(repo, doc_path, "", index.sections.length(), changed, cache)
   }
   let html = if is_url {
     let result = @http.fetch(input, options=opts) catch {
@@ -178,15 +193,8 @@ async fn index_inputs(
   ) catch {
     e => return failure("index failed: \{e.to_string()}")
   }
-  Ok(
-    text_result(
-      "{\"repo\":\{@text.json_escape(repo)},\"doc\":\{@text.json_escape(doc_path)},\"title\":\{@text.json_escape(ex.title)},\"sections\":\{index.sections.length()},\"changed\":\{changed}}",
-    ),
-  )
+  index_ok(repo, doc_path, ex.title, index.sections.length(), changed, cache)
 }
-
-///|
-/// Build the docmunch MCP server rooted at `root`.
 
 ///|
 /// Build the docmunch MCP server rooted at `root`.
@@ -205,19 +213,22 @@ pub fn build_server(
   // and index writes are read-modify-write (D44). The array keeps one shared
   // mutex across the closures that capture it.
   let index_gate : Array[@async.Mutex] = [@async.Mutex::Mutex()]
-  server = register_list_repos(server, root)
-  server = register_get_toc(server, root)
-  server = register_list_docs(server, root)
-  server = register_get_doc(server, root)
-  server = register_get_section_descendants(server, root)
-  server = register_search_titles(server, root)
-  server = register_get_section(server, root)
-  server = register_get_section_context(server, root)
-  server = register_search_sections(server, root)
-  server = register_index_url(server, root, index_gate)
-  server = register_index_local(server, root, index_gate)
-  server = register_index_dir(server, root, index_gate)
-  server = register_delete_index(server, root, index_gate)
+  // One index cache per server: an MCP server is long-lived, so the JSON is
+  // parsed once per repo instead of once per request (D55).
+  let index_cache = @index.IndexCache::new()
+  server = register_list_repos(server, root, index_cache)
+  server = register_get_toc(server, root, index_cache)
+  server = register_list_docs(server, root, index_cache)
+  server = register_get_doc(server, root, index_cache)
+  server = register_get_section_descendants(server, root, index_cache)
+  server = register_search_titles(server, root, index_cache)
+  server = register_get_section(server, root, index_cache)
+  server = register_get_section_context(server, root, index_cache)
+  server = register_search_sections(server, root, index_cache)
+  server = register_index_url(server, root, index_gate, index_cache)
+  server = register_index_local(server, root, index_gate, index_cache)
+  server = register_index_dir(server, root, index_gate, index_cache)
+  server = register_delete_index(server, root, index_gate, index_cache)
   match auth_token {
     Some(expected) =>
       if expected != "" {

@@ -6,6 +6,7 @@
 fn register_list_repos(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "list_repos",
@@ -33,6 +34,7 @@ fn register_list_repos(
 fn register_get_toc(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "get_toc",
@@ -40,7 +42,7 @@ fn register_get_toc(
     schema(prop_str("repo", "Repo name."), "\"repo\""),
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -53,6 +55,7 @@ fn register_get_toc(
 fn register_get_section(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "get_section",
@@ -72,7 +75,7 @@ fn register_get_section(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let id = arg_str(args, "id")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -107,6 +110,7 @@ fn register_get_section(
 fn register_get_section_context(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "get_section_context",
@@ -124,7 +128,7 @@ fn register_get_section_context(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let id = arg_str(args, "id")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -180,6 +184,7 @@ fn register_get_section_context(
 fn register_search_sections(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "search_sections",
@@ -197,7 +202,7 @@ fn register_search_sections(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let query = arg_str(args, "query")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -227,6 +232,7 @@ fn register_search_sections(
 fn register_list_docs(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "list_docs",
@@ -234,7 +240,7 @@ fn register_list_docs(
     schema(prop_str("repo", "Repo name."), "\"repo\""),
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -266,6 +272,7 @@ fn register_list_docs(
 fn register_get_doc(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "get_doc",
@@ -281,7 +288,7 @@ fn register_get_doc(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let path = arg_str(args, "path")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -311,6 +318,7 @@ fn register_get_doc(
 fn register_get_section_descendants(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "get_section_descendants",
@@ -322,7 +330,7 @@ fn register_get_section_descendants(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let id = arg_str(args, "id")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
@@ -352,6 +360,7 @@ fn register_get_section_descendants(
 fn register_search_titles(
   server : @mcpsdk.MCPServer,
   root : String,
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "search_titles",
@@ -367,7 +376,7 @@ fn register_search_titles(
     async fn(_ctx, args) {
       let repo = arg_str(args, "repo")
       let query = arg_str(args, "query")
-      let index = match @index.load_index(root, repo) {
+      let index = match cache.get(root, repo) {
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }

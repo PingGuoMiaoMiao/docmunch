@@ -296,3 +296,52 @@ async test "chinese queries match chinese bodies" {
   let none = search(index, "量子计算")
   assert_eq(none.length(), 0)
 }
+
+///|
+async test "index cache loads once and serves repeats" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text = "# A\n\none\n## B\n\ntwo\n"
+  ignore(build_index_checked(root, "c", "doc.md", text))
+  let cache = IndexCache::new()
+  let first = cache.get(root, "c")
+  assert_true(first is Some(_))
+  assert_eq(cache.size(), 1)
+  let second = cache.get(root, "c")
+  assert_true(second is Some(_))
+  assert_eq(cache.size(), 1)
+  assert_true(cache.get(root, "missing") is None)
+  assert_eq(cache.size(), 1)
+}
+
+///|
+async test "invalidate forces a reload after a write" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  ignore(build_index_checked(root, "c", "doc.md", "# A\n\none\n"))
+  let cache = IndexCache::new()
+  let before = match cache.get(root, "c") {
+    Some(i) => i.sections.length()
+    None => abort("expected a cached index")
+  }
+  assert_eq(before, 1)
+  ignore(build_index_checked(root, "c", "doc.md", "# A\n\none\n## B\n\ntwo\n"))
+  cache.invalidate("c")
+  let after = match cache.get(root, "c") {
+    Some(i) => i.sections.length()
+    None => abort("expected a reloaded index")
+  }
+  assert_eq(after, 2)
+}
+
+///|
+async test "deleted repo disappears from the cache" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  ignore(build_index_checked(root, "c", "doc.md", "# A\n\none\n"))
+  let cache = IndexCache::new()
+  assert_true(cache.get(root, "c") is Some(_))
+  delete_repo(root, "c")
+  assert_true(cache.get(root, "c") is None)
+  assert_eq(cache.size(), 0)
+}

@@ -8,6 +8,7 @@ fn register_index_url(
   server : @mcpsdk.MCPServer,
   root : String,
   gate : Array[@async.Mutex],
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "index_url",
@@ -32,7 +33,7 @@ fn register_index_url(
         Some(r) => r
         None => parsed.host()
       }
-      index_inputs(root, url, repo, @http.doc_path_for_url(url))
+      index_inputs(root, url, repo, @http.doc_path_for_url(url), cache)
     },
   )
 }
@@ -42,6 +43,7 @@ fn register_index_local(
   server : @mcpsdk.MCPServer,
   root : String,
   gate : Array[@async.Mutex],
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "index_local",
@@ -63,7 +65,7 @@ fn register_index_local(
         Some(r) => r
         None => "local"
       }
-      index_inputs(root, path, repo, @http.normalize_local_path(path))
+      index_inputs(root, path, repo, @http.normalize_local_path(path), cache)
     },
   )
 }
@@ -73,6 +75,7 @@ fn register_delete_index(
   server : @mcpsdk.MCPServer,
   root : String,
   gate : Array[@async.Mutex],
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "delete_index",
@@ -82,6 +85,7 @@ fn register_delete_index(
       gate[0].acquire()
       defer gate[0].release()
       let repo = arg_str(args, "repo")
+      cache.invalidate(repo)
       @index.delete_repo(root, repo) catch {
         e => return failure("delete failed: \{e.to_string()}")
       }
@@ -95,6 +99,7 @@ fn register_index_dir(
   server : @mcpsdk.MCPServer,
   root : String,
   gate : Array[@async.Mutex],
+  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "index_dir",
@@ -131,7 +136,7 @@ fn register_index_dir(
       let failed : Array[String] = []
       for rel in files {
         let doc_path = base + "/" + rel
-        match index_inputs(root, doc_path, repo, doc_path) {
+        match index_inputs(root, doc_path, repo, doc_path, cache) {
           Ok(_) => ok_count = ok_count + 1
           Err(_) => failed.push(rel)
         }
