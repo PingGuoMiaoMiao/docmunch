@@ -1,0 +1,124 @@
+# 对初审意见的回复与材料补充（可直接粘贴发送）
+
+> 用途：发给组委会 / 答复初审。仓库对应 commit 范围 `e5cecb4..4765e5b`。
+> 提交前请确认仓库已 push、`python tools/acceptance.py --since 2026-11-01` 为 8 PASS。
+
+---
+
+## 正文
+
+尊敬的 MoonBit 开源大赛组委会：
+
+感谢初审意见。三条意见我都接受，其中两条是我表述错误，已改正并补了实测数据；第三条按意见做了受控实验。下面逐条说明，所有数据都可在仓库里复跑。
+
+### 一、关于"取回成本 O(1)"——这条是我错了
+
+原文写"按偏移定位小节，取回成本 O(1)"，这不成立。实测（`tools/cost_model.py`，同一台机器，7 次中位数）：
+
+| 节数 | 检索 | 取回单节 |
+| --- | --- | --- |
+| 286 | 20.7 ms | 10.3 ms |
+| 1,430 | 99.4 ms | 47.9 ms |
+| 5,720 | 417.8 ms | 216.4 ms |
+
+真实成本是 `加载解析索引 O(节数) + 定位 O(节数) + 读该节字节 O(节字节)`，斜率约 0.073 ms/节。**能成立的表述是**：取回的磁盘 IO 与该节大小有关、与文档大小无关（528 KB 文档里取一节 10.8 KB，读放大 2%），但每次调用仍要扫描元数据索引。
+
+顺带把这条短板修了：新增长驻进程索引缓存（`docs/decisions.md` D55），MCP 服务器按 repo 缓存已解析的索引，失效条件为 mtime 变化 + 写路径显式失效。5,980 节 / 9.3 MB 索引下实测：
+
+```
+                          get_section   search_sections
+cold CLI (每请求重解析)      255.0 ms        517.5 ms
+MCP 首次调用                 207.0 ms        234.9 ms
+MCP 缓存后（中位数）            0.6 ms        248.7 ms
+```
+
+取回 255 ms → 0.6 ms（约 457 倍），不再随索引体积增长。**检索仍未优化**（BM25 全量扫描，约 249 ms），如实列出。
+
+### 二、关于"独立增量"——我撤回了一条主张，改成可验证的那条
+
+我原来把"标题对齐切分"当作核心增量，并用我自己写的定长切块做对照，得出"完整性 94% vs 67%"。**这个对照不成立**，因为 baseline 是我自己实现的。改用真实第三方组件（LangChain `MarkdownHeaderTextSplitter` / `RecursiveCharacterTextSplitter`、`rank_bm25`、`tiktoken`）在同一语料、同一批 18 个标注问题上重跑：
+
+```
+system          hit@1     hit@5   complete   ctx tokens
+recursive      5/18     15/18       7/18           1242
+md_header      7/18     15/18      14/18           1268
+docmunch       7/18     15/18      14/18           1212
+full_doc      18/18     18/18      18/18          72514
+```
+
+**docmunch 与 LangChain 的标题切分器在三个质量指标上完全一致。** 因此"我们切得更好"这条主张撤回（`docs/decisions.md` D56）。
+
+剩下的增量不在质量维度，在**可验证性**维度：
+
+| 能力 | LangChain 定长切分 | LangChain 标题切分 | docmunch |
+| --- | --- | --- | --- |
+| 检索质量 | 基准 | 与 docmunch 相同 | 与 md_header 相同 |
+| 产出指回原文的字节区间 | ✗ | ✗ | ✓ |
+| 取回后重算 sha256 自证 | ✗ | ✗ | ✓ |
+| 重复运行逐字节可复现 | ✗ | ✗ | ✓ |
+| 索引版本不匹配即 fail-closed | N/A | N/A | ✓ |
+| 单原生二进制 / MCP 原生 | ✗ | ✗ | ✓ |
+
+为了让这条"增量"不是自说自话，我把它写成了**与实现无关的一致性契约** `conformance/SPEC.md`（六条规则：唯一稳定 id、字节区间连续覆盖、边界落在字符边界、内容哈希可重算、无空小节、产物确定性），并提供 `conformance/check.py`：任何实现都可以拿自己的 index.json + 原文缓存跑一遍。`conformance/selftest.py` 会故意把真实索引破坏五种方式（哈希错、留空洞、id 重复、空节、切在字符中间），验证检查器确实能逐条报出违规——一个"什么都通过"的检查器没有意义。
+
+### 三、关于"减少上下文不能推出回答质量提高"——这条也成立，我做了受控实验
+
+撤回该推论，改为实测。方法：由一个**独立代理**读 5 份文档出 12 道题（含标准答案）；每个上下文策略由**各自的独立代理**作答，且只允许读自己的上下文文件、禁止读仓库；再由**另一个独立代理**对 A–E 匿名列判分，判分员不知道哪列对应哪个策略。结果（`docs/e2e-agent-eval.md`）：
+
+```
+strategy      correct   partial   wrong    score   ctx tokens  per-question
+none                0         0      12    0.000          518            43
+full_trunc          3         2       7    0.333         8556           713
+full               12         0       0    1.000        20275          1690
+recursive          12         0       0    1.000        17117          1426
+docmunch           12         0       0    1.000        13064          1089
+```
+
+三条读数：
+
+1. **无上下文组 0/12**——这批文档没有被模型记住，控制组成立，其他组的分数确实来自材料；
+2. **整篇塞入在窗口受限时崩到 0.333**（同样 12 题，只给前 8000 token，7 题答案根本不在上下文里）；
+3. **三种检索策略准确率打平（都是 12/12），差异在成本**：docmunch 13,064 token，定长切分 17,117（多 31%），整篇 20,275（多 55%）。
+
+**可以主张**：在这组任务上，把上下文成本降到整篇的约 2/3，准确率不降；整篇塞入一旦超出窗口就急剧失效。
+**不能主张**：docmunch 比定长切分更准，或"回答质量更高"。这个实验的局限（12 题全是单点事实、存在天花板效应、单次运行、作答与判分同源模型）写在 `docs/e2e-agent-eval.md` 第 4 节，没有隐藏。
+
+### 四、材料位置与复跑
+
+| 内容 | 位置 |
+| --- | --- |
+| 申报书（含第八、九节的逐条回应） | `docs/application-docmunch.md` |
+| 检索与成本证据 | `docs/evidence-retrieval.md` |
+| 端到端实验 | `docs/e2e-agent-eval.md` |
+| 一致性契约与检查器 | `conformance/SPEC.md`、`conformance/check.py` |
+| 决策记录（含 D55/D56/D57 三次修正） | `docs/decisions.md` |
+
+```sh
+moon build --target native
+moon test                                   # 115/115
+python tools/acceptance.py --since 2026-11-01
+
+pip install langchain-text-splitters rank-bm25 tiktoken
+python tools/retrieval_compare.py           # 真实组件对照
+python tools/cost_model.py                  # 成本模型
+python tools/cache_bench.py --copies 20     # 索引缓存效果
+python conformance/selftest.py              # 契约检查器自测
+```
+
+如果还需要哪一维度的补充数据，请告知，我可以按指定语料/指定问题集重跑。
+
+此致
+
+陈永祺（PingGuoMiaoMiao）
+3226742838@qq.com
+https://github.com/PingGuoMiaoMiao/docmunch
+
+---
+
+## 提交前检查（给自己看）
+
+- [ ] 仓库已 push 到最新 commit
+- [ ] `python tools/acceptance.py --since 2026-11-01` → 8 PASS / 0 WARN
+- [ ] 飞书报名表已用新版"一页说明"覆盖（见 `docs/registration.md`）
+- [ ] 微信群昵称已改为 GitHub ID
+- [ ] 若走邮件回复，邮件与表格内容保持一致，不要出现两个版本的申报描述

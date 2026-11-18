@@ -54,17 +54,25 @@ URL / 本地文件
 只有「标题树 + 字节偏移 + 词频」，因此可解释、可复现、零外部服务、零 API Key。
 单篇文档的索引约 0.5 KB，原文另存。
 
-**当前状态**（截至 2026-11-16）：
+**当前状态**（截至 2026-11-18）：
 
-- 112 个测试全绿；GitHub Actions 每次 push 全绿（含检索对照实验与自举冒烟）；
+- 115 个测试全绿；GitHub Actions 每次 push 全绿；
 - 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.2.1`；
-- 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、
-  词集 Jaccard 0.91；
+- 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
-- MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token）；
-- 检索对照实验（`docs/evidence-retrieval.md`）：同一语料、18 个问题，节级方案 hit@5 94% / 整节完整性 94%，
-  平均上下文 1,853 token；定长切块 72% / 67%；整篇塞入 100% 但 52,755 token（28 倍）；
-- 53 条 ADR 记录取舍与被否方案。
+- MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token），长驻进程索引缓存使取回降到 0.6 ms；
+- 53+ 条 ADR 记录取舍与被否方案（含三次公开修正：D55 索引缓存、D56 撤回"标题切分是增量"、D57 回答质量只报能报的结论）。
+
+**检索与成本（实测，非估算）**：
+
+- 与真实第三方组件对照（LangChain `MarkdownHeaderTextSplitter` / `RecursiveCharacterTextSplitter` + `rank_bm25` + `tiktoken`）：
+  在 18 个标注问题上，docmunch 与 LangChain 标题切分在 hit@1(7/18)、hit@5(15/18)、整节完整性(14/18) **完全一致**——
+  所以本项目**不主张"切得更好"**；
+- 差异在**可验证性**：每节带指回原文的字节区间与 sha256，取回可自证，产物逐字节可复现，索引版本不匹配 fail-closed；
+  这套要求已写成与实现无关的契约（`conformance/SPEC.md`）并提供检查器，任何实现都能接入；
+- 端到端盲测（12 题、5 份文档、5 种上下文策略）：无上下文 0/12；整篇截断到 8000 token 时 3/12；
+  整篇 / 定长切分 / 节级都是 12/12，而上下文成本分别是 20,275 / 17,117 / **13,064** token
+  ——即**同等准确率下省 36% 上下文**，且整篇塞入在窗口受限时会失效。**不主张"更准"**。
 
 **90 秒演示**：
 
