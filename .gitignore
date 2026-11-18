@@ -26,3 +26,5 @@ tools/oracle/out-moonbit/
 
 # Unrelated project that lives in this workspace; never commit it.
 _lunarrender/
+_e2e/
+.selfindex/
