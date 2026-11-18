@@ -28,12 +28,26 @@
 
 | 验收项 | 本项目对应证据 |
 | --- | --- |
-| MoonBit 为主实现语言 | 全部源码为 `.mbt`（8 个包）；仅有 Python/Node 的**测试与校验脚本**，不参与运行时 |
-| 仓库公开、提交可追踪 | 12 次语义化提交，每个阶段一份设计文档 + ADR |
-| 能够运行（README/示例/测试） | `moon build` + `moon test` 一条命令；README 列出全部 CLI 子命令 |
-| 工作有效（本期实质新增） | 从空目录到可用的 fetch→extract→markdown→section→index→MCP 全链路 |
+| MoonBit 为主实现语言 | 产品代码 100% 为 `.mbt`（9 个包，7,756 行）；非 MoonBit 的 3,066 行**全部是验证工具**（抽取差分 oracle、基准、一致性检查器、端到端评测脚本），不参与运行时，也不随二进制发布 |
+| 仓库公开、提交可追踪 | 65 次提交，每阶段一份设计文档 + ADR；三次公开修正（D55/D56/D57）也留了记录 |
+| 能够运行（README/示例/测试） | `moon build` + `moon test`（115/115）一条命令；README 列出全部 CLI 子命令 |
+| 工作有效（本期实质新增） | 从空目录到可用的 fetch→extract→markdown→section→index→MCP 全链路，并发布 MoonCakes 0.3.0 |
 | 开源合规 | Apache-2.0（`LICENSE`）；第三方依赖逐个记录在 `moon.mod`，fixtures 来源在 `fixtures/README.md` 标注 |
-| AI 可解释 | `docs/` 下 8 份阶段文档 + 41 条 ADR（D1–D41，含被否方案），记录每次取舍与踩坑 |
+| AI 可解释 | `docs/` 下 20 份文档 + 56 条 ADR（含被否方案与三次修正），另有端到端评测方法与威胁说明 |
+
+### 2.1 关于"MoonBit 占比"这条 WARN
+
+`tools/acceptance.py` 原规则是"MoonBit 行数 ≥ 其他语言行数 × 3"。当前是 7,756 vs 3,066，触发 WARN。
+
+原因是**验证工具的规模涨了**，不是产品代码掺了别的语言：
+
+| 目录 | 语言 | 是否随产品发布 | 作用 |
+| --- | --- | --- | --- |
+| `core/ section/ index/ mcp/ http/ extract/ md/ cmd/` | MoonBit | 是 | 产品本体，编译为单个原生二进制 |
+| `tools/`、`conformance/` | Python / Node | 否 | 抽取差分 oracle、成本基准、契约检查器、端到端评测 |
+| `tools/oracle/` | Node | 否 | Mozilla Readability 参考实现，仅作离线对照 |
+
+**没有为了让这条 WARN 消失而修改检查规则**（那属于自欺）。规则保持原样，差异在这里说明。如果评审认为验证工具也应计入语言占比，那条 WARN 就是准确的：产品是 MoonBit，验证侧是多语言。
 
 ## 3. 交付物清单
 
