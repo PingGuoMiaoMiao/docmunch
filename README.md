@@ -133,6 +133,7 @@ licences, AI explainability, demo entry and test density.
 ```sh
 python tools/selfcheck.py                      # one command: acceptance + doc consistency
 python tools/selfcheck.py --with-publish       # + package readiness (no upload, no login)
+python tools/selfcheck.py --with-registry      # + published-version claims vs mooncakes.io
 python tools/acceptance.py --since 2026-11-01  # acceptance rules only
 ```
 

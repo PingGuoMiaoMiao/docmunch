@@ -295,6 +295,63 @@ def check_adr_count_claims(root: Path, actual):
     return ("PASS", f"{scanned} ADR-count claim(s) consistent with {actual} entries")
 
 
+def check_registry_facts(root: Path):
+    """Compare claims about the PUBLISHED package against the registry itself.
+
+    Written after a false claim survived in six documents: they said 0.3.1 was
+    unpublished while the registry had carried it for days, and quoted 35
+    downloads when it was 44. The root cause was trusting an internal document
+    to describe the outside world. This asks the outside world.
+
+    Network-dependent by nature: any transport problem is SKIP, never FAIL.
+    """
+    moon_mod = root / "moon.mod"
+    adoption = root / "docs" / "adoption.md"
+    if not moon_mod.is_file() or not adoption.is_file():
+        return ("SKIP", "no moon.mod / docs/adoption.md to cross-check")
+    m = re.search(r'^name\s*=\s*"([^"]+)"', read(moon_mod), re.M)
+    if not m:
+        return ("SKIP", "moon.mod has no name field")
+    module = m.group(1)
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://mooncakes.io/api/v0/manifest/" + module,
+            headers={"User-Agent": "consistency-check"},
+        )
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            raw = resp.read().decode("utf-8", "replace")
+    except Exception as exc:  # any transport problem means SKIP
+        return ("SKIP", f"registry unreachable ({type(exc).__name__}); claims not judged")
+    versions = sorted(set(re.findall(r'"version"\s*:\s*"([0-9][^"]*)"', raw)))
+    downloads = re.findall(r'"downloads"\s*:\s*(\d+)', raw)
+    if not versions:
+        return ("SKIP", "registry reply had no versions")
+    latest = versions[-1]
+    body = read(adoption)
+    problems = []
+    published_claim = re.search(r"已发布版本\s*\|([^|]+)\|", body)
+    if published_claim and latest not in published_claim.group(1):
+        problems.append(
+            "adoption.md lists published versions without the actual latest (" + latest + ")"
+        )
+    dl_claim = re.search(r"下载\s*\|\s*\*\*(\d+)\*\*", body)
+    if dl_claim and downloads:
+        claimed, actual = int(dl_claim.group(1)), int(downloads[0])
+        if claimed > actual:
+            problems.append(
+                f"adoption.md claims {claimed} downloads, registry says {actual}"
+            )
+    if problems:
+        return ("FAIL", "; ".join(problems[:4]))
+    return (
+        "PASS",
+        f"registry: latest={latest}, versions={len(versions)}, "
+        f"downloads={downloads[0] if downloads else '?'}"
+        + ("; claims agree" if (published_claim or dl_claim) else "; no claims to compare"),
+    )
+
+
 def check_cited_commits(root: Path):
     """Every commit hash quoted in the docs must exist in this repository.
 
@@ -337,6 +394,9 @@ def main() -> int:
     ap.add_argument("--project", default=".")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--skip-build", action="store_true", help="do not run moon test")
+    ap.add_argument("--with-registry", action="store_true",
+                    help="also cross-check claims about the published package "
+                         "against mooncakes.io (network; SKIP when unreachable)")
     args = ap.parse_args()
     root = Path(args.project).resolve()
     if not root.is_dir():
@@ -352,6 +412,8 @@ def main() -> int:
         ("Cited commits", check_cited_commits(root)),
         ("ADR counts", check_adr_count_claims(root, adr_total(root))),
     ]
+    if args.with_registry:
+        results.append(("Registry", check_registry_facts(root)))
     if args.json:
         out(json.dumps([{"check": n, "status": s, "evidence": e} for n, (s, e) in results], ensure_ascii=False))
     else:

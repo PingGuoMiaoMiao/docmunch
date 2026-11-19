@@ -132,6 +132,9 @@ def main() -> int:
     ap.add_argument("--skip-build", action="store_true", help="do not run moon build/test")
     ap.add_argument("--with-consumer", action="store_true",
                     help="also resolve and run the PUBLISHED package from the registry")
+    ap.add_argument("--with-registry", action="store_true",
+                    help="also cross-check published-version/download claims against "
+                         "mooncakes.io (network; SKIP when unreachable)")
     ap.add_argument("--with-publish", action="store_true",
                     help="also dry-run `moon publish` (validates the packaged zip by "
                          "extracting and re-checking it; no upload, no login)")
@@ -145,7 +148,10 @@ def main() -> int:
     sections.append(("acceptance: the six published rules", rows_from_acceptance(acc) if acc else [],
                      err))
 
-    con, err2 = run_json(HERE / "consistency.py", shared)
+    con_args = list(shared)
+    if args.with_registry:
+        con_args.append("--with-registry")
+    con, err2 = run_json(HERE / "consistency.py", con_args)
     sections.append(("consistency: documents vs code", rows_from_consistency(con) if con else [],
                      err2))
 
