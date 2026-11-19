@@ -28,3 +28,8 @@ tools/oracle/out-moonbit/
 _lunarrender/
 _e2e/
 .selfindex/
+__pycache__/
+# research/scratch downloads (not project source)
+research/
+# research/scratch downloads (not project source)
+_session_zip/
