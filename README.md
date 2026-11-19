@@ -165,6 +165,10 @@ docs/      pre-research, decision records, competition notes
 
 Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md).
 
+## 变更记录
+
+[CHANGELOG.md](CHANGELOG.md) 按**能力**组织（不是 git log 的搬运），每条带可复跑命令与 commit；被否决的方向与已知限制也记在里面。
+
 ## Docs
 
 - [docs/adoption.md](docs/adoption.md) — distribution numbers, an external consumer check, and what would count as adoption.

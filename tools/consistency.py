@@ -245,6 +245,36 @@ def check_documented_transcript(root: Path):
     return ("PASS", f"{len(quoted)} quoted lines found in the real transcript")
 
 
+def check_cited_commits(root: Path):
+    """Every commit hash quoted in the docs must exist in this repository.
+
+    A changelog that cites a hash which does not exist is worse than one that
+    cites nothing: it looks verifiable and is not. Cheap to check, so check it.
+    """
+    try:
+        res = subprocess.run(
+            ["git", "-C", str(root), "rev-list", "--abbrev-commit", "--all"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+    except OSError as exc:
+        return ("SKIP", f"cannot list commits: {exc}")
+    known = set(res.stdout.split())
+    if not known:
+        return ("SKIP", "no commits visible (not a git repo?)")
+    cited = {}
+    for doc in tracked_markdown(root):
+        rel = doc.relative_to(root).as_posix()
+        for m in re.finditer(r"`([0-9a-f]{7,40})`", read(doc)):
+            cited.setdefault(m.group(1), []).append(rel)
+    if not cited:
+        return ("SKIP", "no commit hashes cited in the docs")
+    missing = sorted(h for h in cited if h not in known)
+    if missing:
+        detail = "; ".join(f"{h} (in {cited[h][0]})" for h in missing[:5])
+        return ("FAIL", f"cited commits do not exist: {detail}")
+    return ("PASS", f"{len(cited)} cited commit(s) all exist")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", default=".")
@@ -262,6 +292,7 @@ def main() -> int:
         ("ADR numbering", check_adr_numbering(root)),
         ("Links", check_links(root)),
         ("Transcript", check_documented_transcript(root)),
+        ("Cited commits", check_cited_commits(root)),
     ]
     if args.json:
         out(json.dumps([{"check": n, "status": s, "evidence": e} for n, (s, e) in results], ensure_ascii=False))
