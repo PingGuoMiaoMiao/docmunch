@@ -1,6 +1,7 @@
 # 对初审意见的回复与材料补充（可直接粘贴发送）
 
-> 用途：发给组委会 / 答复初审。仓库对应 commit 范围 `e5cecb4..1bd16c9`。
+> 用途：发给组委会 / 答复初审。本回复覆盖 `e5cecb4..cd0161c`（写完后如再提交，
+> 请把右端换成当时的 HEAD；左端是初审指出的那一版）。
 > 提交前请确认仓库已 push、`python tools/acceptance.py --since 2026-11-01` 为 8 PASS。
 
 ---
@@ -16,7 +17,7 @@
 1. **"取回 O(1)"是我写错了。** 已改为实测模型：单次取回 = 加载解析索引 O(节数) + 定位 O(节数) + 读该节字节；斜率约 0.073 ms/节。同时把短板修了：长驻进程索引缓存使取回 278 ms → 0.5 ms，倒排索引使检索 536 ms → 10.2 ms。
 2. **"独立增量"我收回了一条主张。** 用真实 LangChain 组件重测后，我的检索质量**不比它好，hit@5 还落后 1 题**（14/18 对 15/18）。剩下的增量是**可验证性**：每节带指回原文的字节区间与 sha256、取回可自证、产物逐字节可复现。这套要求已写成与实现无关的契约，并有独立实现通过检查器。
 3. **"省上下文 ≠ 回答更好"成立，我做了两组实验。** 单点事实题上三种策略全部 12/12（打平，只能证明省 36% 上下文）；补的"答案横跨小节"难题上，分节检索 **8/8 全对（1.000）**，定长切块 **4 对 4 半对（0.750）**，多花 50% 上下文。
-4. 两处修正对我都不利，我都改了并留了记录（`docs/decisions.md` D56/D59/D61）。
+4. 这几处修正都对我自己不利，我都改了并留了记录（`docs/decisions.md` D56/D59/D61）。
 
 ### 一、关于"取回成本 O(1)"——这条是我错了
 
@@ -34,6 +35,9 @@ MCP 缓存后（中位数）            0.6 ms        248.7 ms
 ```
 
 取回 255 ms → 0.6 ms（约 457 倍），不再随索引体积增长。**检索仍未优化**（BM25 全量扫描，约 249 ms），如实列出。
+
+> 注：这一节是"只加缓存"那一版的测量（5,980 节 / 9.3 MB）。之后补了倒排索引，
+> 检索也从 249 ms 降到 10.2 ms，两代数字都在第 4.1 节并列给出，不混用。
 
 ### 二、关于"独立增量"——我撤回了一条主张，改成可验证的那条
 
@@ -138,13 +142,13 @@ hit@1 上 bigram 与 jieba 相同（7/18），char 落后 2 题；hit@5 上 jieb
 
 | 指标 | 数值 |
 | --- | --- |
-| MoonCakes 下载 / 依赖者 | 37 / **0** |
+| MoonCakes 下载 / 依赖者 | 35 / **0** |
 | GitHub star / fork / issue | 0 / 0 / 0 |
 | 近 14 天克隆 | 180 次 / 67 个独立来源 |
 
 下载量不等于采用，所以补了两条硬证据：
 
-1. `tools/consumer_check.py`：在临时目录新建**独立 MoonBit 模块**，从 registry 写 `PingGuoMiaoMiao/docmunch@0.3.1`，编译并运行成功——证明发布出去的包能被外部真实消费；
+1. `tools/consumer_check.py`：在临时目录新建**独立 MoonBit 模块**，从 registry 写 `PingGuoMiaoMiao/docmunch@0.3.0`，编译并运行成功——证明发布出去的包能被外部真实消费（registry 当前最新为 0.3.0；仓库内已是 0.3.1，尚未 publish）；
 2. `conformance/reference_impl.py`：一个与 docmunch **零共享代码**的约 70 行 Python 实现，按同一份 `SPEC.md` 产出索引，`conformance/check.py` 判定 `all rules passed`——证明契约不是只对自家实现成立。
 
 **我没有主张"已被采用"**：依赖者、fork、issue、第三方通过检查器的记录当前都是 0，这一点写在文档里。
@@ -157,7 +161,7 @@ hit@1 上 bigram 与 jieba 相同（7/18），char 落后 2 题；hit@5 上 jieb
 | 检索与成本证据 | `docs/evidence-retrieval.md` |
 | 端到端实验 | `docs/e2e-agent-eval.md` |
 | 一致性契约与检查器 | `conformance/SPEC.md`、`conformance/check.py` |
-| 决策记录（含 D55–D60 六次修正） | `docs/decisions.md` |
+| 决策记录（D55–D61 为初审后的修正链，D63/D64 为口径与计数口径的修正） | `docs/decisions.md` |
 | 倒排索引与性能 | `index/inverted.mbt`、`tools/cache_bench.py` |
 | 中文评测 | `docs/cjk-eval.md`、`tools/cjk_eval.py` |
 | 采用记录与外部消费验证 | `docs/adoption.md`、`tools/consumer_check.py` |
@@ -165,7 +169,7 @@ hit@1 上 bigram 与 jieba 相同（7/18），char 落后 2 题；hit@5 上 jieb
 
 ```sh
 moon build --target native
-moon test                                   # 115/115
+moon test                                   # 116/116
 python tools/acceptance.py --since 2026-11-01
 
 pip install langchain-text-splitters rank-bm25 tiktoken
@@ -175,7 +179,7 @@ python tools/cache_bench.py --copies 20     # 索引缓存效果
 python conformance/selftest.py              # 契约检查器自测
 python conformance/reference_impl.py --src docs/p5-index.md --out /tmp/ref
 python conformance/check.py --index /tmp/ref/index.json --raw /tmp/ref/raw
-python tools/consumer_check.py --version 0.3.1   # 外部模块消费已发布版本
+python tools/consumer_check.py --version 0.3.0   # 外部模块消费已发布版本（registry 最新）
 python tools/cjk_eval.py                    # 中文分词对照（需 jieba）
 ```
 
@@ -189,10 +193,19 @@ https://github.com/PingGuoMiaoMiao/docmunch
 
 ---
 
-## 提交前检查（给自己看）
+## 提交前检查（给自己看 —— 2026-11-19 已实测勾选）
 
-- [ ] 仓库已 push 到最新 commit
-- [ ] `python tools/acceptance.py --since 2026-11-01` → 8 PASS / 0 WARN
-- [ ] 飞书报名表已用新版"一页说明"覆盖（见 `docs/registration.md`）
-- [ ] 微信群昵称已改为 GitHub ID
+- [x] 仓库已 push 到最新 commit
+- [x] `python tools/acceptance.py --since 2026-11-01` → 8 PASS / 0 WARN / 0 FAIL
+- [x] `python tools/consistency.py` → 5 项全过（测试数 / ADR 编号 / 链接 /
+      引用的 commit 是否存在 / 文档贴出的输出是否逐字为真）
+- [x] `python tools/consumer_check.py --version 0.3.0` → 外部模块从 registry
+      解析、编译并运行成功（8.1 s）
+- [x] `python conformance/selftest.py` → 五种破坏方式全部被检查器报出
+- [ ] 飞书报名表已用新版"一页说明"覆盖（见 `docs/registration.md`）——**待你提交**
+- [ ] 微信群昵称已改为 GitHub ID——**待你操作**
 - [ ] 若走邮件回复，邮件与表格内容保持一致，不要出现两个版本的申报描述
+
+> 版本口径提醒：registry 最新是 **0.3.0**；仓库 `moon.mod` 已是 0.3.1 但**尚未
+> publish**（需本机 `moon login`）。因此本回复与报名表里凡涉及"已发布版本"的
+> 地方都写 0.3.0，避免让评审 `moon add` 时对不上。
