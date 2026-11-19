@@ -18,7 +18,7 @@
 | 是否为移植项目 | 否（独立实现，无上游代码可移植） |
 | 组队人数 | 1 人（如需组队请改成实际人数并确认队员 GitHub ID） |
 | 推荐人 GitHub ID | 【有就填，没有留空】 |
-| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （0.2.1） |
+| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （0.3.0） |
 
 ---
 
@@ -57,7 +57,7 @@ URL / 本地文件
 **当前状态**（截至 2026-11-18）：
 
 - 115 个测试全绿；GitHub Actions 每次 push 全绿；
-- 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.2.1`；
+- 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.3.0`；
 - 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
 - MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token），长驻进程索引缓存使取回降到 0.6 ms；
@@ -93,7 +93,7 @@ moon run cmd/main --target native -- mcp
 ```
 
 **仓库里可以看什么**：`README.md`（用法）、`docs/application-docmunch.md`（申报书全文）、
-`docs/devlog.md`（开发历程与踩坑）、`docs/decisions.md`（53 条 ADR）、
+`docs/devlog.md`（开发历程与踩坑）、`docs/decisions.md`（56 条 ADR）、
 `docs/pre-research.md`（生态调研与参考实现对照）。
 
 ---
@@ -101,7 +101,7 @@ moon run cmd/main --target native -- mcp
 ## 三、提交前的自检
 
 ```sh
-moon test                            # 112/112
+moon test                            # 115/115
 python tools/acceptance.py --since 2026-11-01   # 8 PASS / 0 WARN / 0 FAIL
 ```
 

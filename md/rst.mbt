@@ -85,7 +85,11 @@ pub fn rst_to_markdown(source : String) -> String {
       is_rst_adornment(lines[i + 1]) > 0 &&
       line.trim() != "" &&
       is_rst_adornment(line) == 0 {
-      let mark = Char::from_int(lines[i + 1].trim()[0].to_int())
+      let mut mark = '\u{0}'
+      for c in lines[i + 1].trim() {
+        mark = c
+        break
+      }
       let mut level = 0
       let mut found = false
       for idx = 0; idx < levels.length(); idx = idx + 1 {

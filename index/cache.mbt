@@ -77,5 +77,5 @@ pub fn IndexCache::invalidate(self : IndexCache, repo : String) -> Unit {
 ///|
 /// Number of cached repos (used by tests and the bench).
 pub fn IndexCache::size(self : IndexCache) -> Int32 {
-  self.entries.size()
+  self.entries.length()
 }

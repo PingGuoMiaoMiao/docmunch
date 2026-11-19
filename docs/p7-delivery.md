@@ -8,7 +8,7 @@
 
 | 指标 | 结果 | 验证方式 |
 | --- | --- | --- |
-| 单元/集成测试 | **79/79 通过** | `moon test` |
+| 单元/集成测试 | **115/115 通过** | `moon test` |
 | 抽取：标题匹配 | **4/4** | `python tools/compare.py` |
 | 抽取：平均长度比 / Jaccard | **1.03 / 0.91** | 同上 |
 | Markdown 黄金文件 | **4/4 无漂移** | `python tools/markdown_golden.py` |
@@ -102,7 +102,7 @@ moon run cmd/main --target native -- mcp
 | stderr / stdout 混用 | 错误与正常结果都走 stdout | 诊断走 `fail()` → stderr，stdout 只留数据 |
 | 编译与测试卫生 | MCP SDK 与本地包同名告警；fetch 测试端口写死 | SDK 别名 `@mcpsdk`；fetch 测试改用动态端口 |
 
-验证：`moon check --target native` 0 errors（3 条存量 warning：2×`result_error_return` + 1×`unused_package`）、`moon test` 79/79、`moon build` 成功；7 套外部校验全绿（compare 4/4、markdown_golden 4/4、toc_check 4/4、mcp_e2e 10/10、mcp_http_e2e 7/7、bench 正常出数、acceptance 7 PASS）。
+验证：`moon check --target native` 0 errors（4 条存量 warning：3×`result_error_return` 是 MCP SDK 契约要求返回 `Result`，1×`unused_package` 是工具链缺 `test-import` 导致测试专用包被算作未使用）、`moon test` 79/79、`moon build` 成功；7 套外部校验全绿（compare 4/4、markdown_golden 4/4、toc_check 4/4、mcp_e2e 10/10、mcp_http_e2e 7/7、bench 正常出数、acceptance 7 PASS）。
 
 ## 6. 已知差距（诚实的部分）
 
@@ -118,7 +118,7 @@ moon run cmd/main --target native -- mcp
 | 增量范围 | 只跳过"字节完全相同"的文档；局部修改仍整篇重解析 | 大文档改一行也要重切，但比全量重建好 |
 | 目录索引是单进程串行 | `index-dir` 逐个文件处理，没有并发抓取 | 抓远程站点的目录树时偏慢 |
 | 无词干化 / 无倒排缓存 | `documents` 与 `document` 不合并；每次查询全量扫描小节 | 千级小节内仍是毫秒级，上万后需要倒排 |
-| 无答案质量端到端评测 | 只测了召回 / 完整性 / 成本三个中间量，没有固定模型的盲评 | 不能声称"回答更准"；需要 30–50 个真实任务 + 固定 prompt 才成立（见 `docs/evidence-retrieval.md` §9.3） |
+| 端到端评测有天花板效应 | 已做盲评（12 题 × 5 策略，见 `docs/e2e-agent-eval.md`），但三种检索策略准确率都是 12/12，无法区分优劣 | 只能主张"同等准确率下省 36% 上下文"，不能主张"更准"；需要多跳/比较/否定型问题才能拉开差距 |
 | 检索延迟未优化 | 索引已缓存（D55），但 BM25 仍全量扫描 | 5,980 节时 search 约 249 ms，需要倒排索引才能再降 |
 
 ## 7. 复现全部证据

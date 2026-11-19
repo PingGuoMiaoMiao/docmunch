@@ -85,7 +85,7 @@ URL / 本地文件
 ### 2.6 MCP 服务
 
 - 实现 MCP **2026-07-28**（无状态协议：`server/discover` + 每请求 `_meta`）；
-- **12 个工具**：`index_url`、`index_local`、`list_repos`、`list_docs`、`get_doc`、`get_toc`、`get_section`、`get_section_context`、`get_section_descendants`、`search_sections`、`search_titles`、`delete_index`；
+- **13 个工具**：`index_url`、`index_local`、`index_dir`、`list_repos`、`list_docs`、`get_doc`、`get_toc`、`get_section`、`get_section_context`、`get_section_descendants`、`search_sections`、`search_titles`、`delete_index`；
 - 传输：stdio（默认）与 Streamable HTTP（`--http --port`）；
 - `get_section` / `get_section_context` 支持 `max_bytes`（默认 8000）截断，返回 `truncated`/`total_bytes`，避免一次调用撑爆客户端上下文；
 - 索引写操作由共享互斥锁串行化，HTTP 并发调用不会互相覆盖。
@@ -132,7 +132,7 @@ moon run cmd/main --target native -- mcp --http --port 4240
 
 | 层次 | 手段 | 当前结果 |
 | --- | --- | --- |
-| 单元 / 集成 | `moon test`（含本地 HTTP 服务器起的 7 个抓取用例：200 / 相对重定向 / 循环 / 404 / 超限 / 超时 / 私网拒绝） | **95/95** |
+| 单元 / 集成 | `moon test`（含本地 HTTP 服务器起的 7 个抓取用例：200 / 相对重定向 / 循环 / 404 / 超限 / 超时 / 私网拒绝） | **115/115** |
 | 抽取质量 | 与 Node 版 Mozilla Readability 做差分（4 个真实页面） | 标题 4/4，平均长度比 1.03，词集 Jaccard **0.91** |
 | Markdown | 4 份黄金文件逐字节比对 | 4/4 稳定 |
 | 分节契约 | 独立脚本读磁盘字节校验：连续覆盖、UTF-8 合法、sha256 全等、ID 唯一 | 4/4 通过 |
@@ -223,7 +223,7 @@ moon run cmd/main --target native -- mcp --http --port 4240
 
 ```sh
 moon build --target native
-moon test                          # 95/95
+moon test                          # 115/115
 python tools/compare.py            # 抽取差分：4/4，1.03 / 0.91
 python tools/markdown_golden.py    # 黄金文件：4/4
 python tools/toc_check.py          # 分节字节契约：4/4

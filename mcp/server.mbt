@@ -216,7 +216,7 @@ pub fn build_server(
   // One index cache per server: an MCP server is long-lived, so the JSON is
   // parsed once per repo instead of once per request (D55).
   let index_cache = @index.IndexCache::new()
-  server = register_list_repos(server, root, index_cache)
+  server = register_list_repos(server, root)
   server = register_get_toc(server, root, index_cache)
   server = register_list_docs(server, root, index_cache)
   server = register_get_doc(server, root, index_cache)

@@ -6,7 +6,6 @@
 fn register_list_repos(
   server : @mcpsdk.MCPServer,
   root : String,
-  cache : @index.IndexCache,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
   server.tool(
     "list_repos",
