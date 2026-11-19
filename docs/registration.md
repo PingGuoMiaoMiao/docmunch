@@ -18,7 +18,7 @@
 | 是否为移植项目 | 否（独立实现，无上游代码可移植） |
 | 组队人数 | 1 人（如需组队请改成实际人数并确认队员 GitHub ID） |
 | 推荐人 GitHub ID | 【有就填，没有留空】 |
-| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （0.3.0） |
+| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （registry 上最新是 **0.3.0**；仓库已到 0.3.1，见下方说明） |
 
 ---
 
@@ -36,7 +36,7 @@
 ```
 URL / 本地文件
   → 抓取（HTTPS、流式、重定向、SSRF 防护、charset 转码、缓存、重试）
-  → 平台识别（16 类文档框架）
+  → 平台指纹（16 类，含 GitHub/GitLab 与通用兜底）
   → 正文抽取（Readability 兼容评分 + 链接密度裁剪）
   → HTML → CommonMark
   → 按标题分节（ATX/setext、感知代码围栏、跳过 frontmatter、字节偏移 + sha256）
@@ -54,14 +54,14 @@ URL / 本地文件
 只有「标题树 + 字节偏移 + 词频」，因此可解释、可复现、零外部服务、零 API Key。
 单篇文档的索引约 0.5 KB，原文另存。
 
-**当前状态**（截至 2026-11-18）：
+**当前状态**（截至 2026-11-19）：
 
-- 115 个测试全绿；GitHub Actions 每次 push 全绿；
-- 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.3.0`；
+- 116 个测试全绿；GitHub Actions 每次 push 全绿；
+- MoonCakes 已发布 `0.3.0`（另有 0.2.1 / 0.2.0）；仓库当前 `moon.mod` 为 0.3.1，**尚未 publish**（需本机 `moon login`），因此评审 `moon add` 拿到的是 0.3.0；
 - 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
 - MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token）；长驻进程下取回 0.5 ms、检索 10.2 ms（索引缓存 + 倒排索引）；
-- 53+ 条 ADR 记录取舍与被否方案（含三次公开修正：D55 索引缓存、D56 撤回"标题切分是增量"、D57 回答质量只报能报的结论）。
+- 66 条 ADR 记录取舍与被否方案（含三次公开修正：D55 索引缓存、D56 撤回"标题切分是增量"、D57 回答质量只报能报的结论）。
 
 **检索与成本（实测，非估算）**：
 
@@ -93,7 +93,7 @@ moon run cmd/main --target native -- mcp
 ```
 
 **仓库里可以看什么**：`README.md`（用法）、`docs/application-docmunch.md`（申报书全文）、
-`docs/devlog.md`（开发历程与踩坑）、`docs/decisions.md`（56 条 ADR）、
+`docs/devlog.md`（开发历程与踩坑）、`docs/decisions.md`（66 条 ADR）、
 `docs/pre-research.md`（生态调研与参考实现对照）。
 
 ---

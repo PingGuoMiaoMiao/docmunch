@@ -124,6 +124,13 @@ def check_test_counts(root: Path, total):
     claim_res = [
         re.compile(r"(?:moon\s*test|测试|用例|tests?)\s*[:：]?\s*[^\d\n]{0,8}(\d{1,5})/\1", re.I),
         re.compile(r"(\d{1,5})/\1\s*(?:个|项)?\s*(?:test|测试|用例)", re.I),
+        # Plain "N 个测试" / "N tests" claims. Added after a registration
+        # document claimed "115 个测试" while the suite had 116: that form is
+        # just as much a claim as "115/115" and was slipping through.
+        # "N 个测试文件" counts FILES, not tests - a false positive that only
+        # showed up in practice, hence the negative lookahead.
+        re.compile(r"(\d{1,5})\s*(?:个|项)\s*(?:单元法?)?测试(?!\s*文件)", re.I),
+        re.compile(r"\b(\d{1,5})\s+(?:unit\s+)?tests?\b", re.I),
     ]
     for doc in tracked_markdown(root):
         rel = doc.relative_to(root).as_posix()

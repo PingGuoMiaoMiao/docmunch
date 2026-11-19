@@ -1,5 +1,7 @@
 # 参考实现对照与重构计划
 
+<!-- consistency:snapshot: 对照评估写于某一时点，测试数属于当时；当前数字见 README 与 CHANGELOG -->
+
 - 对照日期：2026-11-11
 - 参考代码：`D:\reference\jdocmunch-mcp`（`git clone --depth 1` 自 https://github.com/jgravelle/jdocmunch-mcp ）
 - 另一个"参考仓库" https://github.com/PingGuoMiaoMiao/docmunch 是空仓库（只有占位 README），**没有可对照的代码**，它就是本项目自己的仓库。
