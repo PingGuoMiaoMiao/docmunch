@@ -69,17 +69,19 @@ docmunch            8         0       0    1.000        16722          2090
 上一节说了难题集是**构造**的，那自然要问：这种形状在真实语料里占多少？没有人手上有本项目的真实查询日志，所以测不了"问题分布"。能诚实测的是**结构那一半**：一个小节有多长，一个 512 字符块能覆盖多少（`tools/section_shape.py`）。
 
 ```
-corpus: 27 docs, 358 sections
+corpus: 27 docs, 359 sections        (docs/ 的快照，随文档增加而漂移)
 
-section length (chars)            313 median /      807 p90 /     3990 max
+section length (chars)            313 median /      807 p90 /    3990 max
 section length (tokens)           206 median /     2024 max
 
-sections longer than one 512-char chunk : 94/358  (26%)
-sections longer than two chunks            : 20/358  (6%)
+sections longer than one 512-char chunk : 96/359  (27%)
+sections longer than two chunks            : 21/359  (6%)
 mean chunks needed to cover a section      : 1.35
 
 labelled questions whose gold section needs >1 chunk: 6/18  (33%)
 ```
+
+> 分母是 `docs/` 的当前快照，所以比例会随本项目继续写文档而小幅漂移（实测 26%→27%）。CI 每次 push 都重跑这个脚本，数字以 CI 输出为准；这里给的是量级而不是常数。
 
 **怎么读**：
 
