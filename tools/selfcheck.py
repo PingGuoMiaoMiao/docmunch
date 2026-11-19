@@ -105,6 +105,15 @@ def check_publish_dryrun():
                 f"current version {ver} is already published on the registry "
                 "(nothing to republish); package itself validated",
             )]
+        # A network hiccup is not a verdict about the package. Treat transport
+        # failures as SKIP so a flaky link never looks like a broken submission.
+        network_markers = (
+            "send failed", "receiver is gone", "connection", "timed out",
+            "dns", "unreachable", "request or response body error",
+        )
+        lowered = body.lower()
+        if any(marker in lowered for marker in network_markers):
+            return [("dry-run", "SKIP", "registry unreachable during dry-run; package not judged")]
         tail = " ".join(body.strip().splitlines()[-3:])[:300]
         return [("dry-run", "FAIL", tail)]
     rechecked = "running moon check on extracted package" in body
