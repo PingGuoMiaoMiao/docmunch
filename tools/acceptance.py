@@ -26,7 +26,7 @@ from pathlib import Path
 
 SKIP_DIRS = {".mooncakes", "_build", ".git", "node_modules", "target", ".dsh", ".agent-teams"}
 OTHER_EXTS = {".py", ".js", ".ts", ".tsx", ".rs", ".go", ".c", ".cc", ".cpp", ".h", ".java", ".kt"}
-OSI_RE = re.compile(r"(apache|mit license|mozilla public|bsd|isc license|unlicense|cc0|zlib|gpl|lgpl)", re.I)
+OSI_RE = re.compile(r"(apache|\bmit\b|mozilla public|bsd|\bisc\b|unlicense|cc0|zlib|gpl|lgpl)", re.I)
 
 
 def out(msg=""):
@@ -66,17 +66,46 @@ def read_text(path: Path, limit=20000) -> str:
         return ""
 
 
+def workspace_members(root: Path) -> set:
+    """Directories listed in `moon.work`: these ARE part of the submission.
+
+    A multi-module workspace (library + adapters + examples) is a legitimate
+    shape; treating every nested moon.mod as "an unrelated checkout" silently
+    undercounts the project. Only members of `moon.work` are exempted, so a
+    genuinely foreign checkout sitting in the tree is still skipped.
+    """
+    work = root / "moon.work"
+    if not work.is_file():
+        return set()
+    text = read_text(work, 20000)
+    members = set()
+    for m in re.finditer(r'"([^"]+)"', text):
+        candidate = (root / m.group(1)).resolve()
+        if candidate.is_dir() and candidate != root.resolve():
+            members.add(candidate)
+    return members
+
+
 def foreign_dirs(root: Path) -> set:
-    """Nested project roots: a subdirectory with its own .git or moon.mod.
+    """Nested project roots that are NOT workspace members.
 
     Workspaces often contain an unrelated checkout; counting its files would
-    make the language ratio meaningless.
+    make the language ratio meaningless. Members declared in `moon.work` are
+    exempt (see workspace_members).
     """
+    members = workspace_members(root)
     skip = set()
-    for marker in root.rglob("*"):
-        if not marker.is_dir():
+    for marker in root.iterdir():
+        if not marker.is_dir() or marker.name.startswith("."):
             continue
-        if marker == root:
+        if marker.resolve() in members:
+            continue
+        if (marker / ".git").exists() or (marker / "moon.mod").exists():
+            skip.add(marker)
+    for marker in root.rglob("*"):
+        if not marker.is_dir() or marker == root:
+            continue
+        if marker.resolve() in members:
             continue
         if (marker / ".git").exists() or (marker / "moon.mod").exists():
             skip.add(marker)
