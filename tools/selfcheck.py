@@ -131,7 +131,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-build", action="store_true", help="do not run moon build/test")
     ap.add_argument("--with-consumer", action="store_true",
-                    help="also resolve and run the PUBLISHED package from the registry")
+                    help="also prove a module outside this repo can use the library")
     ap.add_argument("--with-registry", action="store_true",
                     help="also cross-check published-version/download claims against "
                          "mooncakes.io (network; SKIP when unreachable)")
@@ -164,17 +164,17 @@ def main() -> int:
                     text=True, encoding="utf-8", errors="replace", timeout=1800,
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:
-                sections.append(("consumer: published package", [], f"could not run: {exc}"))
+                sections.append(("consumer: usable from outside", [], f"could not run: {exc}"))
             else:
                 status = "PASS" if res.returncode == 0 else "FAIL"
                 tail = (res.stdout or res.stderr or "").strip().splitlines()
                 sections.append((
-                    "consumer: published package",
+                    "consumer: usable from outside",
                     [("registry consume", status, tail[-1] if tail else "")],
                     None,
                 ))
         else:
-            sections.append(("consumer: published package", [],
+            sections.append(("consumer: usable from outside", [],
                              "no consumer_check.py in this project (skipped)"))
 
     if args.with_publish:

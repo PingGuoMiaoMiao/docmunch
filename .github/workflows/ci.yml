@@ -13,9 +13,11 @@ jobs:
           # The acceptance self-check reads the real commit history.
           fetch-depth: 0
 
+      # Pinned to the toolchain this repository is developed and tested with,
+      # so "passes locally" and "passes in CI" mean the same thing.
       - name: Set up MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "0.1.20261104"
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
       - name: Set up Python
@@ -100,9 +102,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # `moonbitlang/setup-moonbit` does not exist (404). This is the official
+      # installer, the same one moonbitlang/core uses in its composite action.
       - name: Install MoonBit
-        uses: moonbitlang/setup-moonbit@main
-        with:
-          version: "0.1.20261104"
-      - name: Self-check
-        run: python tools/selfcheck.py
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "0.1.20261104"
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+      - name: Registry index, then self-check
+        # The self-check runs `moon test` internally, so it needs the registry.
+        run: |
+          moon update
+          python tools/selfcheck.py
