@@ -148,7 +148,7 @@ hit@1 上 bigram 与 jieba 相同（7/18），char 落后 2 题；hit@5 上 jieb
 
 下载量不等于采用，所以补了两条硬证据：
 
-1. `tools/consumer_check.py`：在临时目录新建**独立 MoonBit 模块**，从 registry 写 `PingGuoMiaoMiao/docmunch@0.3.0`，编译并运行成功——证明发布出去的包能被外部真实消费（registry 当前最新为 0.3.0；仓库内已是 0.3.1，尚未 publish）；
+1. `tools/consumer_check.py`：在临时目录新建**独立 MoonBit 模块**，从 registry 写 `PingGuoMiaoMiao/docmunch@0.3.0`，不只编译运行，而是在**已发布版本**上跑完整链路——建索引（3 节）、BM25 检索（`widget` 命中 2 节）、按 id 取回该节并**校验 sha256**（`hash_verified=true`）——证明发布出去的包能被外部真实消费（registry 当前最新为 0.3.0；仓库内已是 0.3.1，尚未 publish）；
 2. `conformance/reference_impl.py`：一个与 docmunch **零共享代码**的约 70 行 Python 实现，按同一份 `SPEC.md` 产出索引，`conformance/check.py` 判定 `all rules passed`——证明契约不是只对自家实现成立。
 
 **我没有主张"已被采用"**：依赖者、fork、issue、第三方通过检查器的记录当前都是 0，这一点写在文档里。

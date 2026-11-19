@@ -14,6 +14,7 @@ import argparse
 import json
 import pathlib
 import shutil
+import re
 import subprocess
 import sys
 import tempfile
@@ -24,9 +25,14 @@ MANIFEST_URL = f"https://mooncakes.io/api/v0/manifest/{MODULE}"
 
 PROBE = """// Consumes the published package the way a third party would: no local path,
 // no source access, only what MoonCakes serves.
+//
+// Beyond "it compiles", this exercises the thing the project actually sells:
+// build an index from text, search it, then fetch a section by id through the
+// byte-range path with hash verification.
 
 ///|
-fn main {
+///|
+async fn main {
   let section : @core.Section = {
     id: "demo::docs/a.md::intro#1",
     repo: "demo",
@@ -45,6 +51,35 @@ fn main {
   println("index_version=\\{@core.index_version}")
   println("cjk_bigrams=\\{@text.tokenize("中文检索").length()}")
   println("lines=\\{@text.split_lines("a\\nb\\n").length()}")
+
+  let root = "probe-index"
+  let docs_text = "# Guide\\n\\n## Install\\n\\nRun the widget installer.\\n\\n## Usage\\n\\nCall the widget API.\\n"
+  let (index, _) = @index.build_index_checked(root, "probe", "guide.md", docs_text) catch {
+    e => {
+      println("index_failed=\\{e.to_string()}")
+      return
+    }
+  }
+  println("sections=\\{index.sections.length()}")
+
+  let hits = @index.search(index, "widget")
+  println("hits=\\{hits.length()}")
+  for hit in hits {
+    println("hit=\\{hit.title} score=\\{hit.score}")
+  }
+
+  // fetch the first hit back through the verified byte-range path
+  if hits.length() > 0 {
+    let (text, verified) = @index.get_section_text(root, "probe", index, hits[0].id, verify=true) catch {
+      e => {
+        println("fetch_failed=\\{e.to_string()}")
+        return
+      }
+    }
+    println("fetched_bytes=\\{text.length()}")
+    println("hash_verified=\\{verified}")
+    println("contains_widget=\\{text.contains("widget")}")
+  }
 }
 """
 
@@ -55,13 +90,16 @@ version = "0.1.0"
 preferred_target = "native"
 
 import {{
+  "moonbitlang/async@{async_version}",
   "{module}@{version}",
 }}
 """
 
 PACKAGE = """import {{
+  "moonbitlang/async",
   "{module}/core",
   "{module}/core/text",
+  "{module}/index",
 }}
 
 pkgtype(kind: "executable")
@@ -114,8 +152,20 @@ def main():
     project = work / "probe"
     try:
         project.mkdir()
+        # The probe needs whatever the library needs to be *used*: the index API
+        # is async, so the consumer module must depend on moonbitlang/async at the
+        # same version the library itself pins. Read it from the project manifest
+        # instead of hard-coding a version that will drift.
+        async_match = re.search(
+            r'"moonbitlang/async@([0-9][0-9.]*)"',
+            (pathlib.Path(__file__).resolve().parent.parent / "moon.mod").read_text(
+                encoding="utf-8", errors="replace"
+            ),
+        )
+        async_version = async_match.group(1) if async_match else "0.22.7"
         (project / "moon.mod").write_text(
-            MANIFEST.format(module=MODULE, version=version), encoding="utf-8")
+            MANIFEST.format(module=MODULE, version=version, async_version=async_version),
+            encoding="utf-8")
         (project / "moon.pkg").write_text(PACKAGE.format(module=MODULE), encoding="utf-8")
         (project / "main.mbt").write_text(PROBE, encoding="utf-8")
 

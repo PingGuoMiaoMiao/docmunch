@@ -43,7 +43,7 @@ non-commercial-licensed, so only its *design* was studied).
 
 ## Install
 
-Published on MoonCakes as **`PingGuoMiaoMiao/docmunch` 0.2.0**:
+Published on MoonCakes as **`PingGuoMiaoMiao/docmunch` 0.3.0** (the repository heads to 0.3.1, not yet published):
 
 ```sh
 moon add PingGuoMiaoMiao/docmunch

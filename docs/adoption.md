@@ -18,7 +18,19 @@
 
 ## 2. 可消费性证明（比下载量更硬）
 
-下载量可以是误点。能证明这个包**真的能被外部模块用起来**的是下面这条可复跑检查：
+下载量可以是误点。能证明这个包**真的能被外部模块用起来**的是下面这条可复跑检查——
+它不只验证"能编译"，而是在**已发布版本**上跑完整链路：建索引 → BM25 检索 →
+按 id 取回该节并校验 sha256。
+
+实测输出（`--version 0.3.0`）：
+
+```
+sections=3          # 3 个标题 → 3 节
+hits=2              # 查询 widget 命中 Install / Usage，各 score=44
+fetched_bytes=39
+hash_verified=true  # 按字节区间取回并重算哈希
+contains_widget=true
+```
 
 ```sh
 python tools/consumer_check.py --version 0.3.0

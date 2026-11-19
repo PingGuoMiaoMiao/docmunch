@@ -1,0 +1,60 @@
+{
+  "repo": "probe",
+  "doc_paths": [
+    "guide.md"
+  ],
+  "sections": [
+    {
+      "id": "probe::guide.md::guide#1",
+      "repo": "probe",
+      "doc_path": "guide.md",
+      "title": "Guide",
+      "level": 1,
+      "byte_start": 0,
+      "byte_end": 9,
+      "parent_id": "",
+      "content_hash": "30f9e7de5ae09919346761503b7b2348229be343eeb0d0e5b55f4b895d41a3b1",
+      "terms": [
+        "guide"
+      ],
+      "tokens": 1
+    },
+    {
+      "id": "probe::guide.md::guide/install#2",
+      "repo": "probe",
+      "doc_path": "guide.md",
+      "title": "Install",
+      "level": 2,
+      "byte_start": 9,
+      "byte_end": 48,
+      "parent_id": "probe::guide.md::guide#1",
+      "content_hash": "76ee5ff12c31e7d4e5066f3d6e5f5b703585afbfe6347d3924e085b6050f96d7",
+      "terms": [
+        "install",
+        "run",
+        "widget",
+        "installer"
+      ],
+      "tokens": 4
+    },
+    {
+      "id": "probe::guide.md::guide/usage#2",
+      "repo": "probe",
+      "doc_path": "guide.md",
+      "title": "Usage",
+      "level": 2,
+      "byte_start": 48,
+      "byte_end": 79,
+      "parent_id": "probe::guide.md::guide#1",
+      "content_hash": "0c56015103146e55a5dee8da2d64e857bed6d169b58f71b9830fad5d8e8c083f",
+      "terms": [
+        "usage",
+        "call",
+        "widget",
+        "api"
+      ],
+      "tokens": 4
+    }
+  ],
+  "index_version": 4
+}
