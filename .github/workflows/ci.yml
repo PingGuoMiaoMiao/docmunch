@@ -104,5 +104,5 @@ jobs:
         uses: moonbitlang/setup-moonbit@main
         with:
           version: "0.1.20261104"
-      - name: Consistency guard
-        run: python tools/consistency.py
+      - name: Self-check
+        run: python tools/selfcheck.py

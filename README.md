@@ -131,7 +131,8 @@ skill: it checks MoonBit-primary code, commit history, build/tests, README,
 licences, AI explainability, demo entry and test density.
 
 ```sh
-python tools/acceptance.py --since 2026-11-01   # round start date
+python tools/selfcheck.py                      # one command: acceptance + doc consistency
+python tools/acceptance.py --since 2026-11-01  # acceptance rules only
 ```
 
 Exit code 0 means no FAIL. WARN rows are "a human should look", FAIL rows must
