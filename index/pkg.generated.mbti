@@ -70,12 +70,28 @@ pub(all) struct IndexCache {
 }
 pub async fn IndexCache::get(Self, String, String) -> @core.DocIndex?
 pub fn IndexCache::invalidate(Self, String) -> Unit
+pub async fn IndexCache::inverted(Self, String, String) -> InvertedIndex?
 pub fn IndexCache::new() -> Self
 pub fn IndexCache::size(Self) -> Int32
 
 pub(all) struct IndexCacheEntry {
   mtime : Int64
   index : @core.DocIndex
+  inverted : InvertedIndex?
+}
+
+pub(all) struct InvertedIndex {
+  postings : Map[String, Array[Posting]]
+  lengths : Array[Double]
+  avg_len : Double
+  total : Int32
+}
+pub fn InvertedIndex::build(@core.DocIndex) -> Self
+pub fn InvertedIndex::search(Self, @core.DocIndex, String, max_results? : Int32) -> Array[SearchHit]
+
+pub(all) struct Posting {
+  section : Int32
+  tf : Double
 }
 
 pub(all) struct SearchHit {

@@ -60,7 +60,7 @@ URL / 本地文件
 - 已发布 MoonCakes `PingGuoMiaoMiao/docmunch@0.3.0`；
 - 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
-- MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token），长驻进程索引缓存使取回降到 0.6 ms；
+- MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token）；长驻进程下取回 0.5 ms、检索 10.2 ms（索引缓存 + 倒排索引）；
 - 53+ 条 ADR 记录取舍与被否方案（含三次公开修正：D55 索引缓存、D56 撤回"标题切分是增量"、D57 回答质量只报能报的结论）。
 
 **检索与成本（实测，非估算）**：

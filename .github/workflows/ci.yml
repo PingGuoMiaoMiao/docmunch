@@ -68,3 +68,10 @@ jobs:
 
       - name: Self-index smoke (dogfood)
         run: python tools/selfindex.py
+
+      - name: Conformance kit (ours + an independent implementation)
+        run: |
+          python conformance/selftest.py
+          mkdir -p /tmp/refimpl
+          python conformance/reference_impl.py --src docs/p5-index.md --out /tmp/refimpl
+          python conformance/check.py --index /tmp/refimpl/index.json --raw /tmp/refimpl/raw

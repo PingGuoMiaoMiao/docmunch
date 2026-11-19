@@ -259,6 +259,7 @@ python tools/acceptance.py --since 2026-11-01   # 验收自检：8 PASS
 | 索引版本不匹配即 **fail-closed** | N/A | N/A | ✓ |
 | 单原生二进制 / 无 Python 运行时 | ✗ | ✗ | ✓ |
 | MCP 原生接口 | ✗ | ✗ | ✓（13 个工具） |
+| 倒排索引（查询只访问候选节） | ✗（每次全量打分） | ✗（每次全量打分） | ✓（D58） |
 
 一句话：**docmunch 不声称检索更准，它声称"取回的这一段可以被证明就是原文的那一段"，并且这件事在 MoonBit 生态里没有第二家做。**
 
@@ -307,13 +308,13 @@ full_doc      18/18     18/18      18/18          72514
 
 ```
                           get_section   search_sections
-cold CLI (parse each)        255.0 ms        517.5 ms
-MCP first call               207.0 ms        234.9 ms
-MCP cached (median)            0.6 ms        248.7 ms
+cold CLI (parse each)        278.3 ms        535.5 ms
+MCP first call               223.4 ms        243.1 ms
+MCP cached (median)            0.5 ms         10.2 ms
 ```
 
-- **取回 255 ms → 0.6 ms（约 457 倍）**，不再随索引体积增长；
-- **检索仍约 249 ms**（BM25 全量扫描，无倒排索引）——这一项**没有优化**，如实列出。
+- **取回 278 ms → 0.5 ms（约 553 倍）**，不再随索引体积增长；
+- **检索 536 ms → 10.2 ms（约 52 倍）**：新增倒排索引（D58）后查询只访问含查询词的节。冷启动 CLI 仍需重建 postings（约 240 ms @ 6,580 节），这一点如实列出。
 
 磁盘读放大：528 KB 文档中取一节 10.8 KB，**2%**。这部分与文档大小无关，只与节大小有关。
 

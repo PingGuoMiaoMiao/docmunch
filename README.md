@@ -37,6 +37,9 @@ non-commercial-licensed, so only its *design* was studied).
 | P21 | retrieval evidence: measured cost model, real-component comparison (docs/evidence-retrieval.md) | ✅ done |
 | P22 | in-process index cache for long-lived MCP servers (457x faster section fetch) | ✅ done |
 | P23 | conformance kit (section contract as a checkable spec) + blinded end-to-end accuracy/cost evaluation | ✅ done |
+| P24 | inverted index: long-lived query latency 249 ms → 10.2 ms | ✅ done |
+| P25 | CJK evaluation vs jieba (no-dictionary bigram holds up) | ✅ done |
+| P26 | adoption record + external consumer check + reference implementation of the contract | ✅ done |
 
 ## Install
 
@@ -146,6 +149,8 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
 
 ## Docs
 
+- [docs/adoption.md](docs/adoption.md) — distribution numbers, an external consumer check, and what would count as adoption.
+- [docs/cjk-eval.md](docs/cjk-eval.md) — Chinese tokenisation: bigram vs jieba, measured.
 - [docs/e2e-agent-eval.md](docs/e2e-agent-eval.md) — blinded evaluation: accuracy and context cost of five context strategies.
 - [conformance/SPEC.md](conformance/SPEC.md) — the section contract, as six checkable rules any implementation can meet.
 - [docs/evidence-retrieval.md](docs/evidence-retrieval.md) — recall, context completeness and measured retrieval cost vs chunking and full-document.

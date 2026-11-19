@@ -76,13 +76,13 @@ corpus: 20 copies, 420 docs, 5980 sections, index 9308 KB
 
 path                     get_section  search_sections
 -----------------------------------------------------
-cold CLI (parse each)        255.0 ms          517.5 ms
-MCP first call               207.0 ms          234.9 ms
-MCP cached (median)            0.6 ms          248.7 ms
+cold CLI (parse each)        278.3 ms          535.5 ms
+MCP first call               223.4 ms          243.1 ms
+MCP cached (median)            0.5 ms           10.2 ms
 ```
 
-- **取回：255 ms → 0.6 ms（约 457 倍）**，且不再随索引体积增长——只剩 `read_at`；
-- **检索：仍约 249 ms**，因为 BM25 每次全量扫描，没有倒排索引。这一项**没有优化**，如实记录。
+- **取回：278 ms → 0.5 ms（约 553 倍）**，且不再随索引体积增长——只剩 `read_at`；
+- **检索：536 ms → 10.2 ms（约 52 倍）**——本轮加入倒排索引（D58），查询只访问含查询词的节；冷启动 CLI 仍需重建 postings（约 240 ms @ 6,580 节）。
 
 磁盘读放大：528 KB 文档中取一节 10.8 KB，**读放大 2%**（`tools/cost_model.py`）。这部分与文档大小无关，只与节大小有关。
 
@@ -103,7 +103,7 @@ MCP cached (median)            0.6 ms          248.7 ms
 ## 6. 仍然没有的证据
 
 - **端到端评测已做，但无法区分优劣**：12 题盲评下三种检索策略都是 12/12，差异只在上下文成本（见 `docs/e2e-agent-eval.md`）。本文件仍不主张"用 docmunch 回答更准"。
-- **检索延迟没有优化**（249 ms @ 5980 节）。
+- **冷启动进程没有 postings 缓存**：CLI 每次调用仍要重建倒排（约 240 ms @ 6580 节），只有长驻进程享受 10 ms 的查询延迟。
 - **只有 18 道题、语料只有本项目文档**，存在选择偏差；换了语料结果可能不同，欢迎复跑。
 
 ## 7. 复跑

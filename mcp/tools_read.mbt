@@ -205,11 +205,20 @@ fn register_search_sections(
         Some(i) => i
         None => return failure("repo not indexed: \{repo}")
       }
-      let hits = @index.search(
-        index,
-        query,
-        max_results=arg_int(args, "limit", 10),
-      )
+      // BM25 goes through the cached inverted index: postings are built once per
+      // repo, then a query only touches the sections that contain its terms.
+      // The weighted mode keeps the scanning scorer (it has no postings form).
+      let mode = @index.SearchMode::parse(arg_str(args, "mode"))
+      let limit = arg_int(args, "limit", 10)
+      let hits = match mode {
+        @index.SearchMode::Bm25 =>
+          match cache.inverted(root, repo) {
+            Some(inv) => inv.search(index, query, max_results=limit)
+            None => @index.search(index, query, max_results=limit)
+          }
+        @index.SearchMode::Weighted =>
+          @index.search_with_mode(index, query, mode, max_results=limit)
+      }
       let sb = StringBuilder::StringBuilder()
       sb.write_string("{\"hits\":[")
       for i = 0; i < hits.length(); i = i + 1 {

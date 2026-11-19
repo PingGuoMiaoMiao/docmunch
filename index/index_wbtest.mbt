@@ -345,3 +345,37 @@ async test "deleted repo disappears from the cache" {
   assert_true(cache.get(root, "c") is None)
   assert_eq(cache.size(), 0)
 }
+
+///|
+async test "inverted index returns exactly what the scanning scorer returns" {
+  let root = @fs.tmpdir(prefix="docmunch-test-")
+  defer @fs.rmdir(root, recursive=true)
+  let text =
+    #|# Alpha
+    #|
+    #|alpha alpha beta content here
+    #|
+    #|# Beta
+    #|
+    #|beta gamma content there
+    #|
+    #|# Gamma
+    #|
+    #|gamma alpha content everywhere
+  let index = build_index(root, "inv", "doc.md", text)
+  let inv = InvertedIndex::build(index)
+  for query in ["alpha", "beta", "gamma content", "nonexistentterm", ""] {
+    let scanned = search_with_mode(
+      index,
+      query,
+      SearchMode::Bm25,
+      max_results=10,
+    )
+    let posted = inv.search(index, query, max_results=10)
+    assert_eq(posted.length(), scanned.length())
+    for i = 0; i < scanned.length(); i = i + 1 {
+      assert_eq(posted[i].id, scanned[i].id)
+      assert_eq(posted[i].score, scanned[i].score)
+    }
+  }
+}
