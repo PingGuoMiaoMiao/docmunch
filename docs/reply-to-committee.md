@@ -83,7 +83,56 @@ docmunch           12         0       0    1.000        13064          1089
 **可以主张**：在这组任务上，把上下文成本降到整篇的约 2/3，准确率不降；整篇塞入一旦超出窗口就急剧失效。
 **不能主张**：docmunch 比定长切分更准，或"回答质量更高"。这个实验的局限（12 题全是单点事实、存在天花板效应、单次运行、作答与判分同源模型）写在 `docs/e2e-agent-eval.md` 第 4 节，没有隐藏。
 
-### 四、材料位置与复跑
+### 四、本轮补充的三项引擎级工作（都可复跑）
+
+初审之后我没有只改文字，也补了三处能测量、能被外部验证的东西。
+
+**4.1 倒排索引：查询不再全量打分**
+
+原先 BM25 每次查询给所有节打分，成本 O(节数)。现在建 `词 → [(节, 加权 tf)]` 的倒排表（字段权重与原来一致：title 3 / path 2 / body 1），查询只访问含查询词的节。有单测断言**倒排结果与扫描结果逐条相同（id 与分数）**，所以这是提速而不是换排序。
+
+6,580 节 / 10.3 MB 索引实测：
+
+```
+                          get_section   search_sections
+cold CLI (parse each)        278.3 ms        535.5 ms
+MCP first call               223.4 ms        243.1 ms
+MCP cached (median)            0.5 ms         10.2 ms
+```
+
+**检索 249 ms → 10.2 ms（约 24 倍），取回 553 倍。** 冷启动 CLI 仍要重建 postings（约 240 ms），这条在本报告和 `docs/evidence-retrieval.md` 里都如实写出。
+
+**4.2 中文评测：不用分词词典会不会更差**
+
+docmunch 的中文按重叠 bigram 切分、不带词典。用同一个 BM25、同一批 329 节、同一组 18 个标注问题对比三种分词（`tools/cjk_eval.py`）：
+
+```
+tokenizer       hit@1      hit@5     vocab
+char           7/18      14/18        2755
+bigram(本案)   7/18      16/18       12521
+jieba          7/18      15/18        4847
+```
+
+hit@1 三者完全一致；hit@5 上 bigram 16/18、jieba 15/18。**差 1 题在 18 题样本里属噪声，所以结论是"不劣于词典分词"，不是"优于"。** 代价是词表约 2.6 倍。这条支持了"单二进制、零词典依赖"的设计取舍。
+
+**4.3 采用记录：只写能核对的数据**
+
+`docs/adoption.md` 把"数据"和"证据"分开：
+
+| 指标 | 数值 |
+| --- | --- |
+| MoonCakes 下载 / 依赖者 | 37 / **0** |
+| GitHub star / fork / issue | 0 / 0 / 0 |
+| 近 14 天克隆 | 180 次 / 67 个独立来源 |
+
+下载量不等于采用，所以补了两条硬证据：
+
+1. `tools/consumer_check.py`：在临时目录新建**独立 MoonBit 模块**，从 registry 写 `PingGuoMiaoMiao/docmunch@0.3.1`，编译并运行成功——证明发布出去的包能被外部真实消费；
+2. `conformance/reference_impl.py`：一个与 docmunch **零共享代码**的约 70 行 Python 实现，按同一份 `SPEC.md` 产出索引，`conformance/check.py` 判定 `all rules passed`——证明契约不是只对自家实现成立。
+
+**我没有主张"已被采用"**：依赖者、fork、issue、第三方通过检查器的记录当前都是 0，这一点写在文档里。
+
+### 五、材料位置与复跑
 
 | 内容 | 位置 |
 | --- | --- |
@@ -91,7 +140,11 @@ docmunch           12         0       0    1.000        13064          1089
 | 检索与成本证据 | `docs/evidence-retrieval.md` |
 | 端到端实验 | `docs/e2e-agent-eval.md` |
 | 一致性契约与检查器 | `conformance/SPEC.md`、`conformance/check.py` |
-| 决策记录（含 D55/D56/D57 三次修正） | `docs/decisions.md` |
+| 决策记录（含 D55–D60 六次修正） | `docs/decisions.md` |
+| 倒排索引与性能 | `index/inverted.mbt`、`tools/cache_bench.py` |
+| 中文评测 | `docs/cjk-eval.md`、`tools/cjk_eval.py` |
+| 采用记录与外部消费验证 | `docs/adoption.md`、`tools/consumer_check.py` |
+| 契约的独立实现 | `conformance/reference_impl.py` |
 
 ```sh
 moon build --target native
@@ -103,6 +156,10 @@ python tools/retrieval_compare.py           # 真实组件对照
 python tools/cost_model.py                  # 成本模型
 python tools/cache_bench.py --copies 20     # 索引缓存效果
 python conformance/selftest.py              # 契约检查器自测
+python conformance/reference_impl.py --src docs/p5-index.md --out /tmp/ref
+python conformance/check.py --index /tmp/ref/index.json --raw /tmp/ref/raw
+python tools/consumer_check.py --version 0.3.1   # 外部模块消费已发布版本
+python tools/cjk_eval.py                    # 中文分词对照（需 jieba）
 ```
 
 如果还需要哪一维度的补充数据，请告知，我可以按指定语料/指定问题集重跑。
