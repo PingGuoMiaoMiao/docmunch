@@ -182,7 +182,11 @@ def main():
         if not exe.exists():
             print("FAIL binary not found after build")
             return 1
-        ran = subprocess.run([str(exe)], capture_output=True, text=True,
+        # Run the probe INSIDE its own temp project: the probe writes a small
+        # index ("probe-index/") and running it from the repository root would
+        # drop that directory into the working tree - which is exactly what
+        # happened once and got committed by accident.
+        ran = subprocess.run([str(exe)], cwd=project, capture_output=True, text=True,
                              encoding="utf-8", errors="replace")
         print("run output:")
         for line in ran.stdout.strip().splitlines():

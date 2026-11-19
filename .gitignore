@@ -33,3 +33,6 @@ __pycache__/
 research/
 # research/scratch downloads (not project source)
 _session_zip/
+
+# scratch index written by tools/consumer_check.py if it runs from the repo root
+probe-index/
