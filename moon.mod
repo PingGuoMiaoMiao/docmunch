@@ -3,7 +3,7 @@
 
 name = "PingGuoMiaoMiao/docmunch"
 
-version = "0.3.0"
+version = "0.3.1"
 
 readme = "README.md"
 
@@ -25,4 +25,5 @@ import {
   "moonbit-community/cmark@0.4.12",
   "colmugx/mcp@0.18.2",
   "LL728/moon_encoding@0.2.0",
+  "PingGuoMiaoMiao/docmunch@0.3.0",
 }
