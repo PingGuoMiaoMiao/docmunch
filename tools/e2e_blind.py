@@ -34,16 +34,22 @@ def main():
     strategies = ["none", "full", "recursive", "docmunch"]
     questions = json.loads(
         (WORK / f"{tag + '_' if tag else ''}questions.json").read_text(encoding="utf-8"))
+    # A strategy may be skipped (e.g. a corpus too large to paste whole): blind
+    # only the ones that actually ran, so the judge sees a consistent set.
     answers = {}
     for strategy in strategies:
         path = WORK / "answers" / f"{tag + '_' if tag else ''}{strategy}.json"
         if not path.exists():
-            print(f"missing {path}; run the {strategy} answerer first")
-            return 2
+            print(f"skipping {strategy} (no answers at {path.name})")
+            continue
         data = json.loads(path.read_text(encoding="utf-8"))
         answers[strategy] = {int(item["id"]): str(item["answer"]).strip() for item in data}
+    strategies = [s for s in strategies if s in answers]
+    if not strategies:
+        print("no answer files found")
+        return 2
 
-    letters = ["A", "B", "C", "D"]
+    letters = ["A", "B", "C", "D"][: len(strategies)]
     rng = random.Random(seed)
     shuffled = strategies[:]
     rng.shuffle(shuffled)
