@@ -66,8 +66,22 @@ jobs:
       - name: MCP auth end-to-end
         run: python tools/mcp_auth_e2e.py
 
+      # The evidence scripts need the same third-party components they compare
+      # against (LangChain splitters, rank_bm25, tiktoken, jieba). Installing
+      # them here means every push re-verifies the numbers quoted in the docs.
+      - name: Install evidence dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install langchain-text-splitters rank-bm25 tiktoken jieba annotated-types certifi
+
       - name: Section shape vs chunk size
         run: python tools/section_shape.py
+
+      - name: Retrieval comparison vs real components
+        run: python tools/retrieval_compare.py
+
+      - name: Chinese tokenisation comparison
+        run: python tools/cjk_eval.py
 
       - name: Self-index smoke (dogfood)
         run: python tools/selfindex.py
