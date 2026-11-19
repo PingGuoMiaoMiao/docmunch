@@ -23,6 +23,14 @@ import re
 import subprocess
 import sys
 
+def read_doc(path):
+    """Read a document exactly as its bytes are on disk.
+
+    read_text() would translate CRLF to LF, which silently shifts every byte
+    offset the index records. Never use read_text for files we slice by offset.
+    """
+    return pathlib.Path(path).read_bytes().decode("utf-8")
+
 CORPUS = pathlib.Path("docs")
 REPO = "eval"
 ROOT = pathlib.Path(".doc-index-eval")
@@ -198,7 +206,7 @@ def main():
     # docmunch: sections grouped by document so we can fetch exact text
     doc_text = {}
     for path in sorted(CORPUS.glob("*.md")):
-        doc_text["docs/" + path.name] = path.read_text(encoding="utf-8")
+        doc_text["docs/" + path.name] = read_doc(path)
 
     # baseline 2: fixed chunks over the same corpus
     chunk_texts, chunk_doc = [], []

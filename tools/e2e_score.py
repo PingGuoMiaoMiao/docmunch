@@ -8,7 +8,10 @@ The main judge covers columns A-D. A strategy added later (the truncated
 full-document control) is judged in its own column E and merged here, so the
 existing verdicts stay valid.
 
-Usage: python tools/e2e_score.py [--json out.json]
+--tag hard scores the hard question set (answers spanning one section) and also
+prints the LLM-free both-fact coverage from e2e_hard_prepare.py.
+
+Usage: python tools/e2e_score.py [--json out.json] [--tag hard]
 """
 
 import json
@@ -18,12 +21,13 @@ import sys
 WORK = pathlib.Path("_e2e")
 
 
-def load_verdicts():
+def load_verdicts(prefix):
     """Rows keyed by question id, each mapping letter -> verdict."""
     rows = {}
-    for row in json.loads((WORK / "blind" / "verdicts.json").read_text(encoding="utf-8")):
+    base = WORK / "blind" / f"{prefix}verdicts.json"
+    for row in json.loads(base.read_text(encoding="utf-8")):
         rows[int(row["id"])] = {k: v for k, v in row.items() if k != "id"}
-    extra = WORK / "blind" / "verdicts_E.json"
+    extra = WORK / "blind" / f"{prefix}verdicts_E.json"
     if extra.exists():
         for row in json.loads(extra.read_text(encoding="utf-8")):
             rows.setdefault(int(row["id"]), {})["E"] = row.get("E", "wrong")
@@ -31,13 +35,19 @@ def load_verdicts():
 
 
 def main():
-    key = json.loads((WORK / "blind" / "answer_key.json").read_text(encoding="utf-8"))
-    if (WORK / "blind" / "verdicts_E.json").exists():
+    tag = ""
+    argv = sys.argv[1:]
+    if "--tag" in argv:
+        tag = argv[argv.index("--tag") + 1]
+    prefix = f"{tag}_" if tag else ""
+
+    key = json.loads((WORK / "blind" / f"{prefix}answer_key.json").read_text(encoding="utf-8"))
+    if (WORK / "blind" / f"{prefix}verdicts_E.json").exists():
         key = {**key, "E": "full_trunc"}
 
-    verdicts = load_verdicts()
-    stats = json.loads((WORK / "context_stats.json").read_text(encoding="utf-8"))
-    questions = json.loads((WORK / "questions.json").read_text(encoding="utf-8"))
+    verdicts = load_verdicts(prefix)
+    stats = json.loads((WORK / f"{prefix}context_stats.json").read_text(encoding="utf-8"))
+    questions = json.loads((WORK / f"{prefix}questions.json").read_text(encoding="utf-8"))
     n = len(questions)
 
     per_strategy = {s: {"correct": 0, "partial": 0, "wrong": 0} for s in key.values()}
@@ -70,8 +80,17 @@ def main():
         print(f"{strategy:11} {c:>9} {p:>9} {w:>7} {score:>8.3f} {ctx:>12} "
               f"{round(ctx / n):>13}")
 
-    if "--json" in sys.argv:
-        out = sys.argv[sys.argv.index("--json") + 1]
+    cov_path = WORK / "hard_coverage.json" if tag == "hard" else None
+    if cov_path and cov_path.exists():
+        coverage = json.loads(cov_path.read_text(encoding="utf-8"))
+        print("\nboth-fact coverage (context contains early AND late phrase):")
+        for strategy in ("docmunch", "recursive", "full"):
+            if strategy in coverage:
+                hits = sum(1 for v in coverage[strategy].values() if v)
+                print(f"  {strategy:10} {hits}/{n}")
+
+    if "--json" in argv:
+        out = argv[argv.index("--json") + 1]
         pathlib.Path(out).write_text(
             json.dumps({"per_strategy": results, "detail": detail},
                        ensure_ascii=False, indent=2), encoding="utf-8")

@@ -35,6 +35,14 @@ from langchain_text_splitters import (
 )
 from rank_bm25 import BM25Okapi
 
+def read_doc(path):
+    """Read a document exactly as its bytes are on disk.
+
+    read_text() would translate CRLF to LF, which silently shifts every byte
+    offset the index records. Never use read_text for files we slice by offset.
+    """
+    return pathlib.Path(path).read_bytes().decode("utf-8")
+
 CORPUS = pathlib.Path("docs")
 REPO = "cmp"
 ROOT = pathlib.Path(".doc-index-compare")
@@ -177,7 +185,7 @@ class System:
 
 
 def load_docs():
-    return {f"docs/{p.name}": p.read_text(encoding="utf-8")
+    return {f"docs/{p.name}": read_doc(p)
             for p in sorted(CORPUS.glob("*.md"))}
 
 

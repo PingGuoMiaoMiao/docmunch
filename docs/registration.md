@@ -66,8 +66,8 @@ URL / 本地文件
 **检索与成本（实测，非估算）**：
 
 - 与真实第三方组件对照（LangChain `MarkdownHeaderTextSplitter` / `RecursiveCharacterTextSplitter` + `rank_bm25` + `tiktoken`）：
-  在 18 个标注问题上，docmunch 与 LangChain 标题切分在 hit@1(7/18)、hit@5(15/18)、整节完整性(14/18) **完全一致**——
-  所以本项目**不主张"切得更好"**；
+  在 18 个标注问题上，docmunch 的 hit@1(7/18) 与 LangChain 标题切分相同，hit@5(14/18 vs 15/18) 与整节完整性(13/18 vs 14/18) **各落后 1 题**——
+  所以本项目**不主张"切得更好"，并如实承认略输**；
 - 差异在**可验证性**：每节带指回原文的字节区间与 sha256，取回可自证，产物逐字节可复现，索引版本不匹配 fail-closed；
   这套要求已写成与实现无关的契约（`conformance/SPEC.md`）并提供检查器，任何实现都能接入；
 - 端到端盲测（12 题、5 份文档、5 种上下文策略）：无上下文 0/12；整篇截断到 8000 token 时 3/12；

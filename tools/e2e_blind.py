@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Blind the four answer sets and build the judge pack.
+"""Blind the answer sets and build the judge pack.
 
 The judge must not know which strategy produced which answer, otherwise it can
 favour the one it expects to be better. This script maps the strategies to
@@ -7,7 +7,10 @@ letters A-D with a seeded shuffle, writes the judge pack (questions + gold
 answers + the four anonymised answers), and keeps the mapping on disk so the
 scorer can undo it.
 
-Usage: python tools/e2e_blind.py --seed 20261118
+--tag hard switches to the hard question set (answers spanning one section):
+hard_questions.json / answers/hard_<strategy>.json / blind/hard_*.
+
+Usage: python tools/e2e_blind.py [--seed 20261118] [--tag hard]
 """
 
 import json
@@ -16,18 +19,24 @@ import random
 import sys
 
 WORK = pathlib.Path("_e2e")
-STRATEGIES = ["none", "full", "recursive", "docmunch"]
 
 
 def main():
     seed = 20261118
-    if "--seed" in sys.argv:
-        seed = int(sys.argv[sys.argv.index("--seed") + 1])
+    tag = ""
+    argv = sys.argv[1:]
+    if "--seed" in argv:
+        seed = int(argv[argv.index("--seed") + 1])
+    if "--tag" in argv:
+        tag = argv[argv.index("--tag") + 1]
+    suffix = f"_{tag}" if tag else ""
 
-    questions = json.loads((WORK / "questions.json").read_text(encoding="utf-8"))
+    strategies = ["none", "full", "recursive", "docmunch"]
+    questions = json.loads(
+        (WORK / f"{tag + '_' if tag else ''}questions.json").read_text(encoding="utf-8"))
     answers = {}
-    for strategy in STRATEGIES:
-        path = WORK / "answers" / f"{strategy}.json"
+    for strategy in strategies:
+        path = WORK / "answers" / f"{tag + '_' if tag else ''}{strategy}.json"
         if not path.exists():
             print(f"missing {path}; run the {strategy} answerer first")
             return 2
@@ -36,7 +45,7 @@ def main():
 
     letters = ["A", "B", "C", "D"]
     rng = random.Random(seed)
-    shuffled = STRATEGIES[:]
+    shuffled = strategies[:]
     rng.shuffle(shuffled)
     mapping = dict(zip(letters, shuffled))
 
@@ -49,7 +58,7 @@ def main():
         "判定标准：",
         "",
         "- `correct`：关键事实全部正确（表述可以不同，数字/参数/机制必须对）；",
-        "- `partial`：部分正确，或说对方向但缺少关键事实；",
+        "- `partial`：部分正确（例如两个关键事实只答对一个），或说对方向但缺少关键事实；",
         "- `wrong`：事实错误，或回答\"无法确定\"、空、答非所问。",
         "",
         "只判断事实是否正确，**不要**因为回答更详细或更简洁而加减分。",
@@ -68,13 +77,13 @@ def main():
             lines.append(f"- **{letter}**：{answer}")
         lines.append("")
 
-    judge_pack = WORK / "blind" / "judge_pack.md"
-    judge_pack.parent.mkdir(parents=True, exist_ok=True)
-    judge_pack.write_text("\n".join(lines), encoding="utf-8")
-    (WORK / "blind" / "answer_key.json").write_text(
+    pack = WORK / "blind" / f"{tag + '_' if tag else ''}judge_pack.md"
+    pack.parent.mkdir(parents=True, exist_ok=True)
+    pack.write_text("\n".join(lines), encoding="utf-8")
+    (WORK / "blind" / f"{tag + '_' if tag else ''}answer_key.json").write_text(
         json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    print(f"judge pack -> {judge_pack} ({len(questions)} questions)")
+    print(f"judge pack -> {pack} ({len(questions)} questions)")
     print("mapping (keep private from the judge):", mapping)
     return 0
 

@@ -22,6 +22,14 @@ import tiktoken
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from rank_bm25 import BM25Okapi
 
+def read_doc(path):
+    """Read a document exactly as its bytes are on disk.
+
+    read_text() would translate CRLF to LF, which silently shifts every byte
+    offset the index records. Never use read_text for files we slice by offset.
+    """
+    return pathlib.Path(path).read_bytes().decode("utf-8")
+
 WORK = pathlib.Path("_e2e")
 CORPUS_FILES = [
     "docs/decisions.md",
@@ -94,7 +102,7 @@ def top_k(units, query, k):
 
 def main():
     questions = json.loads((WORK / "questions.json").read_text(encoding="utf-8"))
-    docs = {name: pathlib.Path(name).read_text(encoding="utf-8") for name in CORPUS_FILES}
+    docs = {name: read_doc(name) for name in CORPUS_FILES}
 
     # --- docmunch sections
     if ROOT.exists():
@@ -106,7 +114,7 @@ def main():
         shutil.rmtree(corpus_dir)
     corpus_dir.mkdir(parents=True)
     for name, text in docs.items():
-        (corpus_dir / pathlib.Path(name).name).write_text(text, encoding="utf-8")
+        (corpus_dir / pathlib.Path(name).name).write_bytes(text.encode("utf-8"))
     subprocess.run(
         [str(EXE), "index-dir", str(corpus_dir), "--repo", REPO, "--root", str(ROOT)],
         check=True, capture_output=True, text=True, encoding="utf-8", errors="replace",

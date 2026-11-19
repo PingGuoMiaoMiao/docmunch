@@ -27,6 +27,14 @@ from rank_bm25 import BM25Okapi
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from retrieval_compare import GOLD  # same 18 labelled questions
 
+def read_doc(path):
+    """Read a document exactly as its bytes are on disk.
+
+    read_text() would translate CRLF to LF, which silently shifts every byte
+    offset the index records. Never use read_text for files we slice by offset.
+    """
+    return pathlib.Path(path).read_bytes().decode("utf-8")
+
 CORPUS = pathlib.Path("docs")
 REPO = "cjk"
 ROOT = pathlib.Path(".doc-index-cjk")
@@ -128,7 +136,7 @@ def main():
         check=True, capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     index = json.loads((ROOT / REPO / "index.json").read_text(encoding="utf-8"))
-    docs = {f"docs/{p.name}": p.read_text(encoding="utf-8") for p in sorted(CORPUS.glob("*.md"))}
+    docs = {f"docs/{p.name}": read_doc(p) for p in sorted(CORPUS.glob("*.md"))}
     by_name = {pathlib.Path(name).name: text for name, text in docs.items()}
 
     units = []

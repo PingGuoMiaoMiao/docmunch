@@ -8,7 +8,7 @@
 
 第一版用的是我自己写的定长切块和自写 BM25 做对照，据此得出"标题对齐切分让整节完整性从 67% 提升到 94%"。初审意见指出这不足以证明增量，**这个批评是对的，而且比我当时以为的更严重**：
 
-> 用真实的 LangChain 组件重跑后，标题切分器（`MarkdownHeaderTextSplitter`）在三个质量指标上与 docmunch **完全打平**。
+> 用真实的 LangChain 组件重跑后，标题切分器（`MarkdownHeaderTextSplitter`）与 docmunch 处于同一水平——第二版重跑（修正字节偏移 bug 后）甚至**各领先 1 题**。
 
 所以本文件第一版里"标题对齐是增量"、"完整性 94% vs 67%"两条**作废**，不再作为申报理由。保留的结论只有下面这些。
 
@@ -30,16 +30,16 @@ token 计数：`tiktoken cl100k_base`，非估算。
 ## 2. 结果
 
 ```
-corpus: 21 docs, 299 docmunch sections, 328 recursive chunks, 268 header splits; k=5
+corpus: 26 docs, 347 docmunch sections, 377 recursive chunks, 312 header splits; k=5
 
 system          hit@1     hit@5   complete   ctx tokens
 -------------------------------------------------------
-recursive      5/18     15/18       7/18           1242
-md_header      7/18     15/18      14/18           1268
-docmunch       7/18     15/18      14/18           1212
-full_doc      18/18     18/18      18/18          72514
+recursive      6/18     12/18       4/18           1371
+md_header      7/18     15/18      14/18           1403
+docmunch       7/18     14/18      13/18           1353
+full_doc      18/18     18/18      18/18          89901
 
-average gold-section size: 270 tokens
+average gold-section size: 265 tokens
 ```
 
 指标定义：
@@ -50,8 +50,8 @@ average gold-section size: 270 tokens
 
 ## 3. 结论（只写数据支持的）
 
-1. **检索质量没有增量**：`docmunch` 与 LangChain 的标题切分器在 hit@1（7/18）、hit@5（15/18）、完整性（14/18）上完全一致，上下文大小也几乎相同（1212 vs 1268 token）。**"我们切得更好"这个主张不成立。**
-2. **切分方式本身确实有影响，但那是既有库的能力**：定长切分（`recursive`）完整性只有 7/18，而两种标题感知切分都是 14/18。这个差异属于"用不用标题切分"，不属于本项目。
+1. **检索质量没有增量，而且略低于 LangChain**：`docmunch` 的 hit@1 与 `md_header` 相同（7/18），但 hit@5 是 **14/18 对 15/18**、完整性 **13/18 对 14/18**，各落后 1 题。上下文大小相当（1353 vs 1403 token）。**"我们切得更好"不成立；严格说我们在这一组上略差。**
+2. **切分方式本身确实有影响，但那是既有库的能力**：定长切分（`recursive`）完整性只有 4/18，而两种标题感知切分是 13–14/18。这个差异属于"用不用标题切分"，不属于本项目。
 3. **整篇塞入的 100% 召回不可用**：72,514 token，是检索方案的 **约 60 倍**。对 21 份文档就已经如此，语料再大会直接超出上下文窗口。
 4. **所以真正的差异不在质量，在"能不能验证"**：见第 5 节。
 

@@ -19,20 +19,20 @@
 ## 2. 结果
 
 ```
-corpus: 24 docs, 329 sections, 18 questions, k=5
+corpus: 26 docs, 347 sections, 18 questions, k=5
 
 tokenizer       hit@1      hit@5     vocab  note
 ------------------------------------------------------------
-char           7/18      14/18        2755  no dictionary, largest vocab
-bigram         7/18      16/18       12521  no dictionary, what docmunch ships
-jieba          7/18      15/18        4847  dictionary segmentation, extra dependency
+char           5/18      14/18        2828  no dictionary, largest vocab
+bigram         7/18      14/18       13113  no dictionary, what docmunch ships
+jieba          7/18      15/18        4988  dictionary segmentation, extra dependency
 ```
 
 ## 3. 结论
 
-1. **hit@1 三者完全一致（7/18）**——中文查询的第一个结果，带不带词典没差别。
-2. **hit@5 上 bigram 是 16/18，jieba 15/18，char 14/18**。bigram 比 jieba 多命中 1 题。
-3. **但这 1 题的差距在噪声范围内**（18 题样本），所以正确结论是：**bigram 不劣于词典分词**，不是"优于"。
+1. **hit@1 上 bigram 与 jieba 相同（7/18）**，char 落后 2 题（5/18）——单字切分明显更差。
+2. **hit@5 上 jieba 15/18，bigram 14/18，char 14/18**。**bigram 比词典分词少命中 1 题。**
+3. 因此正确结论是：**bigram 与词典分词基本持平、略低 1 题**——不能说"不劣于"，更不能说"优于"。1 题的差距在 18 题样本里属于噪声，但我们没有理由声称优势。
 4. **代价是词表更大**：bigram 12,521 个 term，jieba 4,847 个，char 2,755 个。索引因此更大（term 越多，`terms` 字段越长），换来的是零词典依赖。
 
 **因此可以主张**：中文检索不需要引入分词词典，重叠 bigram 就能达到 jieba 的水平——这对"单二进制、零外部依赖"的定位是必要的，否则要么内嵌词典（体积），要么调用外部服务（违背定位）。
