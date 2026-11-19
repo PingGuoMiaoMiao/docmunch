@@ -205,6 +205,46 @@ def check_links(root: Path):
     return ("PASS", f"{checked} relative links resolve")
 
 
+def check_documented_transcript(root: Path):
+    """Lines quoted from a tool's output must actually appear in that output.
+
+    README shows a real transcript; hand-edited examples rot the moment the
+    program changes a label (this already happened once: the block said
+    `reconciled=true` while the program prints `matches=true`). Annotation
+    suffixes are stripped at `<-` so the sample can carry explanations.
+    """
+    readme = root / "README.md"
+    cmd = ["moon", "run", "adapters/mqtt/bin", "--target", "native"]
+    if not readme.is_file() or not (root / "adapters" / "mqtt").is_dir():
+        return ("SKIP", "no README quickstart transcript to verify")
+    body = read(readme)
+    marker = "你会拿到什么"
+    if marker not in body:
+        return ("SKIP", "README has no \"what you get\" transcript block")
+    after = body.split(marker, 1)[1]
+    blocks = re.findall(r"```[a-z]*\n(.*?)```", after, re.S)
+    if not blocks:
+        return ("SKIP", "no fenced block after the transcript heading")
+    quoted = []
+    for raw in blocks[0].splitlines():
+        line = raw.split("<-")[0].strip()
+        # skip the command echo and pure prose lines
+        if line and not line.startswith("moon "):
+            quoted.append(line)
+    try:
+        res = subprocess.run(
+            cmd, cwd=root, capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=600,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return ("SKIP", f"could not run the transcript command: {exc}")
+    actual = res.stdout + res.stderr
+    missing = [q for q in quoted if q not in actual]
+    if missing:
+        return ("FAIL", "quoted lines absent from real output: " + "; ".join(missing[:4]))
+    return ("PASS", f"{len(quoted)} quoted lines found in the real transcript")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", default=".")
@@ -221,6 +261,7 @@ def main() -> int:
         ("Test counts", check_test_counts(root, total)),
         ("ADR numbering", check_adr_numbering(root)),
         ("Links", check_links(root)),
+        ("Transcript", check_documented_transcript(root)),
     ]
     if args.json:
         out(json.dumps([{"check": n, "status": s, "evidence": e} for n, (s, e) in results], ensure_ascii=False))
