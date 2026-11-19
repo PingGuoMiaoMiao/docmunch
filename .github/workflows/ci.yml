@@ -92,3 +92,17 @@ jobs:
           mkdir -p /tmp/refimpl
           python conformance/reference_impl.py --src docs/p5-index.md --out /tmp/refimpl
           python conformance/check.py --index /tmp/refimpl/index.json --raw /tmp/refimpl/raw
+
+  # Documents drift away from the code faster than anyone notices. This checks
+  # test-count claims against the real suite, ADR numbering for gaps/duplicates,
+  # and that relative links resolve.
+  consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        uses: moonbitlang/setup-moonbit@main
+        with:
+          version: "0.1.20261104"
+      - name: Consistency guard
+        run: python tools/consistency.py

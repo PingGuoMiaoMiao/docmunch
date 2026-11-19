@@ -101,7 +101,7 @@ moon run cmd/main --target native -- mcp
 ## 三、提交前的自检
 
 ```sh
-moon test                            # 115/115
+moon test                            # 116/116
 python tools/acceptance.py --since 2026-11-01   # 8 PASS / 0 WARN / 0 FAIL
 ```
 
