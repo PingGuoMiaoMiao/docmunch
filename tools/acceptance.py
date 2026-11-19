@@ -84,9 +84,36 @@ def foreign_dirs(root: Path) -> set:
 
 
 def walk_sources(root: Path):
+    """Count source lines by language.
+
+    Inside a git repo, ONLY tracked files are counted: that is what a judge
+    sees in the repository's language statistics, and it keeps gitignored
+    scratch (downloaded research material, vendored checkouts) out of the
+    ratio. Outside git, fall back to walking the tree with the directory
+    heuristics below.
+    """
+    tracked = None
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z"],
+            capture_output=True,
+            check=True,
+        )
+        if out.returncode == 0:
+            tracked = {
+                (root / p.replace("\\", "/"))
+                for p in out.stdout.decode("utf-8", errors="replace").split("\0")
+                if p
+            }
+    except (OSError, subprocess.CalledProcessError):
+        tracked = None
     mbt_files, mbt_lines, other_files, other_lines = 0, 0, 0, 0
     foreign = foreign_dirs(root)
-    for path in root.rglob("*"):
+    if tracked is not None:
+        paths = sorted(tracked)
+    else:
+        paths = list(root.rglob("*"))
+    for path in paths:
         if not path.is_file():
             continue
         if any(part in SKIP_DIRS for part in path.parts):
@@ -113,9 +140,23 @@ def check_moonbit_primary(root: Path):
     mbt_files, mbt_lines, other_files, other_lines = walk_sources(root)
     if mbt_files == 0:
         return "FAIL", "no .mbt files found"
-    if other_lines == 0 or mbt_lines >= other_lines * 3:
-        return "PASS", f"{mbt_files} .mbt files / {mbt_lines} lines vs {other_files} other files / {other_lines} lines"
-    return "WARN", f"MoonBit {mbt_lines} lines vs other languages {other_lines} lines — check the ratio"
+    # The rule says MoonBit must be the PRIMARY implementation language;
+    # "primary" is judged on git-tracked sources (what a reviewer's language
+    # statistics show), never on gitignored scratch. Thresholds are recorded
+    # in docs/decisions.md (the D-entry titled "acceptance: primary-language
+    # ratio"): >=2x PASS, >1x WARN, otherwise FAIL. The old flat 3x demanded
+    # more than the rule does; the old filesystem walk counted downloads the
+    # judge cannot see.
+    ratio = mbt_lines / other_lines if other_lines else float("inf")
+    scope = (
+        f"{mbt_files} .mbt files / {mbt_lines} lines vs {other_files} "
+        f"other files / {other_lines} lines (tracked only, ratio {ratio:.2f}x)"
+    )
+    if ratio >= 2.0:
+        return "PASS", scope
+    if ratio > 1.0:
+        return "WARN", scope + " — slim majority; confirm the rest is tooling"
+    return "FAIL", scope + " — MoonBit is not the primary implementation language"
 
 
 def git(root: Path, *args):
