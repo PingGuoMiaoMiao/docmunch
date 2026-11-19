@@ -66,6 +66,9 @@ jobs:
       - name: MCP auth end-to-end
         run: python tools/mcp_auth_e2e.py
 
+      - name: Section shape vs chunk size
+        run: python tools/section_shape.py
+
       - name: Self-index smoke (dogfood)
         run: python tools/selfindex.py
 

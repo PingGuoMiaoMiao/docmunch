@@ -64,7 +64,32 @@ docmunch            8         0       0    1.000        16722          2090
 2. 这解释了为什么第一轮 12 道单点事实题全都答对：那些题任意策略都能拿到证据，看不出差别。**评测若只出单点事实题，等于没测到分节的价值。**
 3. `full` 的覆盖率与 `docmunch` 相同，但上下文是 5.5 倍（91,745 vs 16,722 token）——这仍不是"我们更准"，而是"同等覆盖下更省"。
 
-## 5. 局限（说清楚才可信）
+## 5. 这类"横跨小节"的问题在语料里有多常见
+
+上一节说了难题集是**构造**的，那自然要问：这种形状在真实语料里占多少？没有人手上有本项目的真实查询日志，所以测不了"问题分布"。能诚实测的是**结构那一半**：一个小节有多长，一个 512 字符块能覆盖多少（`tools/section_shape.py`）。
+
+```
+corpus: 27 docs, 358 sections
+
+section length (chars)            313 median /      807 p90 /     3990 max
+section length (tokens)           206 median /     2024 max
+
+sections longer than one 512-char chunk : 94/358  (26%)
+sections longer than two chunks            : 20/358  (6%)
+mean chunks needed to cover a section      : 1.35
+
+labelled questions whose gold section needs >1 chunk: 6/18  (33%)
+```
+
+**怎么读**：
+
+- **26% 的小节超过一个 512 字符块**，平均一个小节需要 1.35 个块才能覆盖完整。也就是说，只要问题落在小节的后半部分，单块检索就注定拿不到它。
+- 在我们标注过的 18 个问题上，**33%（6/18）的金标小节需要多个块**。
+- 这不是说 26–33% 的真实查询都会失败——那需要查询日志才能说。但它说明这个失败模式的**分母不是边角料**：至少四分之一的内容在结构上就放不进一个块。
+
+**仍然不能主张**：真实用户问题的分布。本文件能说的是"结构上四分之一的节装不进一个块"，不能说的是"四分之一的提问会踩中"。
+
+## 6. 局限（说清楚才可信）
 
 | 局限 | 说明 |
 | --- | --- |
@@ -74,7 +99,7 @@ docmunch            8         0       0    1.000        16722          2090
 | 语料是本项目文档 | 领域集中；换语料结论可能变化 |
 | `full` 未做 LLM 作答 | 91,745 token 超出作答代理的实用预算；这本身就是"整篇塞入不可行"的证据，但意味着 `full` 的准确率缺失 |
 
-## 6. 复跑
+## 7. 复跑
 
 ```sh
 moon build --target native
@@ -85,6 +110,7 @@ python tools/e2e_hard_prepare.py          # 校验题目 + 生成 3 份上下文
 python tools/e2e_blind.py --tag hard
 # 独立判分代理 → _e2e/blind/hard_verdicts.json
 python tools/e2e_score.py --tag hard
+python tools/section_shape.py         # 第 6 节：小节长度分布
 ```
 
 题目文件 `_e2e/hard_questions.json` 由独立代理生成，`early_phrase` / `late_phrase` 与距离可在 `e2e_hard_prepare.py` 的校验输出里逐条核对。
