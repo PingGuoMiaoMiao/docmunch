@@ -252,6 +252,49 @@ def check_documented_transcript(root: Path):
     return ("PASS", f"{len(quoted)} quoted lines found in the real transcript")
 
 
+def check_adr_count_claims(root: Path, actual):
+    """Claims like "49 条 ADR" must match the real number of D-headings.
+
+    Same failure mode as test counts: the number is easy to state and easy to
+    forget. Only applied to files that are not snapshots.
+    """
+    path = root / "docs" / "decisions.md"
+    if not path.is_file():
+        return ("SKIP", "no docs/decisions.md")
+    findings = []
+    scanned = 0
+    # "N 条 ADR" is an exact claim; "N+ 条 ADR" is a floor. Floors exist because
+    # an exact count in prose breaks on every single new ADR: adding one entry
+    # invalidated four sites in practice. A floor stays true for a long stretch
+    # and can still be verified (claimed <= actual).
+    pattern = re.compile(r"(\d{1,4})(\+?)\s*(?:条|个)\s*ADR", re.I)
+    for doc in tracked_markdown(root):
+        rel = doc.relative_to(root).as_posix()
+        body = read(doc)
+        if rel in SNAPSHOT_FILES or any(
+            line.strip().startswith("<!-- consistency:snapshot") for line in body.splitlines()
+        ):
+            continue
+        for lineno, line in enumerate(body.splitlines(), 1):
+            if LINE_IGNORE in line:
+                continue
+            for m in pattern.finditer(line):
+                scanned += 1
+                claimed = int(m.group(1))
+                is_floor = m.group(2) == "+"
+                if is_floor and claimed > actual:
+                    findings.append(
+                        f"{rel}:{lineno}: claims {claimed}+ ADRs, index only has {actual}"
+                    )
+                elif not is_floor and claimed != actual:
+                    findings.append(f"{rel}:{lineno}: claims {claimed} ADRs, index has {actual}")
+    if findings:
+        return ("FAIL", "; ".join(findings[:5]))
+    if scanned == 0:
+        return ("SKIP", "no ADR-count claims in current docs")
+    return ("PASS", f"{scanned} ADR-count claim(s) consistent with {actual} entries")
+
+
 def check_cited_commits(root: Path):
     """Every commit hash quoted in the docs must exist in this repository.
 
@@ -282,6 +325,13 @@ def check_cited_commits(root: Path):
     return ("PASS", f"{len(cited)} cited commit(s) all exist")
 
 
+def adr_total(root: Path):
+    path = root / "docs" / "decisions.md"
+    if not path.is_file():
+        return 0
+    return len([1 for line in read(path).splitlines() if re.match(r"^##\s+D\d+", line)])
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", default=".")
@@ -300,6 +350,7 @@ def main() -> int:
         ("Links", check_links(root)),
         ("Transcript", check_documented_transcript(root)),
         ("Cited commits", check_cited_commits(root)),
+        ("ADR counts", check_adr_count_claims(root, adr_total(root))),
     ]
     if args.json:
         out(json.dumps([{"check": n, "status": s, "evidence": e} for n, (s, e) in results], ensure_ascii=False))
