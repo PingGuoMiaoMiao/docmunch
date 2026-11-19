@@ -18,7 +18,7 @@
 | 是否为移植项目 | 否（独立实现，无上游代码可移植） |
 | 组队人数 | 1 人（如需组队请改成实际人数并确认队员 GitHub ID） |
 | 推荐人 GitHub ID | 【有就填，没有留空】 |
-| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （registry 上最新是 **0.3.0**；仓库已到 0.3.1，见下方说明） |
+| MoonCakes 包 | https://mooncakes.io/docs/PingGuoMiaoMiao/docmunch （registry 最新是 **0.3.1**，与仓库一致） |
 
 ---
 
@@ -57,7 +57,7 @@ URL / 本地文件
 **当前状态**（截至 2026-11-19）：
 
 - 116 个测试全绿；GitHub Actions 每次 push 全绿；
-- MoonCakes 已发布 `0.3.0`（另有 0.2.1 / 0.2.0）；仓库当前 `moon.mod` 为 0.3.1，**尚未 publish**（需本机 `moon login`），因此评审 `moon add` 拿到的是 0.3.0；
+- MoonCakes 已发布 `0.3.1`（另有 0.3.0 / 0.2.1 / 0.2.0），与仓库 `moon.mod` 一致——评审 `moon add` 拿到的就是当前版本；
 - 抽取质量对齐 Mozilla Readability 做差分：4 个真实页面标题全中，平均长度比 1.03、词集 Jaccard 0.91；
 - 分节正确性由独立脚本读磁盘字节验证（连续覆盖 / UTF-8 合法 / sha256 全等 / id 唯一）；
 - MCP 13 个工具，支持 stdio 与 Streamable HTTP（可选 Bearer Token）；长驻进程下取回 0.5 ms、检索 10.2 ms（索引缓存 + 倒排索引）；

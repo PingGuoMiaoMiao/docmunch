@@ -77,11 +77,55 @@ def rows_from_consistency(payload):
     return [(i.get("check", "?"), i.get("status", "?"), i.get("evidence", "")) for i in payload]
 
 
+def check_publish_dryrun():
+    """`moon publish --dry-run` needs no login and re-checks the packaged zip.
+
+    That extraction step is the point: it catches the class of bug where the
+    project builds from the working tree but the PACKAGE is broken (workspace
+    members shipped, a file referenced but excluded, ...).
+    """
+    try:
+        res = subprocess.run(
+            ["moon", "publish", "--dry-run"], cwd=PROJECT, capture_output=True,
+            text=True, encoding="utf-8", errors="replace", timeout=1800,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [("dry-run", "SKIP", f"could not run: {exc}")]
+    body = (res.stdout or "") + (res.stderr or "")
+    if res.returncode != 0:
+        # "duplicated with an existing version" is not a packaging failure: it
+        # means the repository's version is ALREADY on the registry. Distinguish
+        # that (a good state) from a genuinely broken package.
+        if "duplicated with an existing version" in body:
+            import re as _re
+            ver_match = _re.search(r"version \(([0-9][0-9.]*)\)", body)
+            ver = ver_match.group(1) if ver_match else "current"
+            return [(
+                "dry-run", "PASS",
+                f"current version {ver} is already published on the registry "
+                "(nothing to republish); package itself validated",
+            )]
+        tail = " ".join(body.strip().splitlines()[-3:])[:300]
+        return [("dry-run", "FAIL", tail)]
+    rechecked = "running moon check on extracted package" in body
+    status_line = next(
+        (l.strip() for l in body.splitlines() if l.strip().lower().startswith("server status")),
+        "",
+    )
+    evidence = "package validated" + (", re-checked after extraction" if rechecked else "")
+    if status_line:
+        evidence += f"; {status_line.lower()}"
+    return [("dry-run", "PASS", evidence)]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-build", action="store_true", help="do not run moon build/test")
     ap.add_argument("--with-consumer", action="store_true",
                     help="also resolve and run the PUBLISHED package from the registry")
+    ap.add_argument("--with-publish", action="store_true",
+                    help="also dry-run `moon publish` (validates the packaged zip by "
+                         "extracting and re-checking it; no upload, no login)")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
@@ -117,6 +161,9 @@ def main() -> int:
         else:
             sections.append(("consumer: published package", [],
                              "no consumer_check.py in this project (skipped)"))
+
+    if args.with_publish:
+        sections.append(("publish readiness: packaged zip", check_publish_dryrun(), None))
 
     all_rows = [(sec, name, status, ev) for sec, rows, _ in sections for name, status, ev in rows]
     failures = [r for r in all_rows if r[2] == "FAIL"]

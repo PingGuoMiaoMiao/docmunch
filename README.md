@@ -43,7 +43,7 @@ non-commercial-licensed, so only its *design* was studied).
 
 ## Install
 
-Published on MoonCakes as **`PingGuoMiaoMiao/docmunch` 0.3.0** (the repository heads to 0.3.1, not yet published):
+Published on MoonCakes as **`PingGuoMiaoMiao/docmunch` 0.3.1**:
 
 ```sh
 moon add PingGuoMiaoMiao/docmunch
@@ -132,6 +132,7 @@ licences, AI explainability, demo entry and test density.
 
 ```sh
 python tools/selfcheck.py                      # one command: acceptance + doc consistency
+python tools/selfcheck.py --with-publish       # + package readiness (no upload, no login)
 python tools/acceptance.py --since 2026-11-01  # acceptance rules only
 ```
 

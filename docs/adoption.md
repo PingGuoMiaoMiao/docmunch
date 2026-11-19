@@ -7,8 +7,8 @@
 
 | 指标 | 数值 | 来源 |
 | --- | --- | --- |
-| MoonCakes 下载 | **35** | `mooncakes.io/api/v0/manifest/PingGuoMiaoMiao/docmunch` → `downloads` |
-| MoonCakes 已发布版本 | 0.3.0 / 0.2.1 / 0.2.0 | 同上 → `versions` |
+| MoonCakes 下载 | **44** | `mooncakes.io/api/v0/manifest/PingGuoMiaoMiao/docmunch` → `downloads` |
+| MoonCakes 已发布版本 | 0.3.1 / 0.3.0 / 0.2.1 / 0.2.0 | 同上 → `versions` |
 | MoonCakes 依赖者 | **0** | 同上 → `dependents` |
 | GitHub Star / Fork / Issue | 0 / 0 / 0 | `gh api repos/PingGuoMiaoMiao/docmunch` |
 | 仓库克隆（近 14 天） | **180 次 / 67 个独立来源** | `gh api …/traffic/clones` |
@@ -33,20 +33,20 @@ contains_widget=true
 ```
 
 ```sh
-python tools/consumer_check.py --version 0.3.0
+python tools/consumer_check.py --version 0.3.1
 ```
 
 它做的是：
 
 1. 在临时目录新建一个**独立的 MoonBit 模块**（不引用本仓库、不用本地路径）；
-2. 在 `moon.mod` 里写下 `"PingGuoMiaoMiao/docmunch@0.3.0"`（registry 版本）；
+2. 在 `moon.mod` 里写下 `"PingGuoMiaoMiao/docmunch@0.3.1"`（registry 版本）；
 3. 在 `moon.pkg` 里 import `…/core` 与 `…/core/text`；
 4. `moon build --target native` 并**运行**产物。
 
 实测输出：
 
 ```
-consuming PingGuoMiaoMiao/docmunch@0.3.0 from the registry
+consuming PingGuoMiaoMiao/docmunch@0.3.1 from the registry
 build: ok
 run output:
   section=demo::docs/a.md::intro#1

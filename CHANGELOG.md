@@ -7,11 +7,10 @@
 
 ---
 
-## [0.3.1] — 2026-11-19 · **尚未发布到 MoonCakes**
+## [0.3.1] — 2026-11-19 · 已发布（MoonCakes 0.3.1）
 
-> 仓库 `moon.mod` 已是 0.3.1，但 registry 上最新仍是 **0.3.0**——发布需要维护者
-> 本机 `moon login` 后执行 `moon publish`。因此评审 `moon add PingGuoMiaoMiao/docmunch`
-> 拿到的是 0.3.0；本小节描述的能力在仓库源码里可用，但尚未随包分发。
+> registry 上已发布 0.3.1（另有 0.3.0 / 0.2.1 / 0.2.0），与仓库一致；
+> 评审 `moon add PingGuoMiaoMiao/docmunch` 拿到的就是这个版本。
 
 ### 检索与可验证性（本版核心）
 
