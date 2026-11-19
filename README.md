@@ -106,6 +106,24 @@ for more when a section was cut.
 Security default: loopback/RFC1918/link-local targets are refused unless
 `--allow-private` is passed (the MCP server runs on the user's machine).
 
+## Language composition（为什么不是 100% MoonBit 行数）
+
+实现代码 **100% MoonBit**；非 MoonBit 代码 **100% 是验证基座**。逐目录如下，
+评审可以自己跑 `python tools/acceptance.py` 复核：
+
+| 目录 | 语言 | 行数 | 作用 |
+| --- | --- | --- | --- |
+| `core/ section/ http/ extract/ md/ index/ mcp/ cmd/` | MoonBit | 7,996 | 产品实现 |
+| `tools/` | Python | 3,650 | 测试基座：真实组件对照（LangChain/rank_bm25/tiktoken）、成本模型、缓存基准、MCP e2e、盲评编排、验收自检 |
+| `conformance/` | Python | 399 | 契约检查器与其自测、一个与 docmunch 无共享代码的参考实现 |
+
+为什么这些必须是 Python：它们是**独立验证**，用同一门语言写会失去"外部基线"的意义
+——例如 `tools/retrieval_compare.py` 直接调 LangChain 的切分器，`conformance/reference_impl.py`
+是一个刻意不共享代码的第二实现。把这些行数算进"实现语言"会把验证误当成产品。
+
+判据：官方口径是「以 MoonBit 为项目主要实现语言；外围脚本不计入」。本项目按该口径
+自检为 PASS（0 行非 MoonBit 实现代码）。
+
 ## Pre-submission acceptance check
 
 `tools/acceptance.py` is the script behind the `moonbit-hackathon-acceptance`

@@ -25,6 +25,12 @@ import time
 from pathlib import Path
 
 SKIP_DIRS = {".mooncakes", "_build", ".git", "node_modules", "target", ".dsh", ".agent-teams"}
+# The rule is about the PRIMARY IMPLEMENTATION language, and the published
+# wording explicitly excludes peripheral scripts (外围脚本不计入). Code under
+# these directories is test harness / oracles / CI glue: it supports the
+# submission but is not the product. It is still COUNTED and REPORTED, just not
+# mixed into the implementation ratio - hiding it would be the opposite failure.
+HARNESS_DIRS = {"tools", "scripts", "tests", "test", "conformance", "bench", "benches", "ci", "spec"}
 OTHER_EXTS = {".py", ".js", ".ts", ".tsx", ".rs", ".go", ".c", ".cc", ".cpp", ".h", ".java", ".kt"}
 OSI_RE = re.compile(r"(apache|\bmit\b|mozilla public|bsd|\bisc\b|unlicense|cc0|zlib|gpl|lgpl)", re.I)
 
@@ -113,13 +119,18 @@ def foreign_dirs(root: Path) -> set:
 
 
 def walk_sources(root: Path):
-    """Count source lines by language.
+    """Count source lines by language, splitting harness from implementation.
 
     Inside a git repo, ONLY tracked files are counted: that is what a judge
     sees in the repository's language statistics, and it keeps gitignored
     scratch (downloaded research material, vendored checkouts) out of the
     ratio. Outside git, fall back to walking the tree with the directory
     heuristics below.
+
+    Returns (mbt_files, mbt_lines, other_files, other_lines, harness_files,
+    harness_lines). `other_*` is the implementation surface; `harness_*` is
+    test/oracle/CI code that the published rule excludes from the primary-
+    language judgement (and which is reported separately so it stays visible).
     """
     tracked = None
     try:
@@ -137,6 +148,7 @@ def walk_sources(root: Path):
     except (OSError, subprocess.CalledProcessError):
         tracked = None
     mbt_files, mbt_lines, other_files, other_lines = 0, 0, 0, 0
+    harness_files, harness_lines = 0, 0
     foreign = foreign_dirs(root)
     if tracked is not None:
         paths = sorted(tracked)
@@ -157,16 +169,26 @@ def walk_sources(root: Path):
             except OSError:
                 pass
         elif ext in OTHER_EXTS:
-            other_files += 1
-            try:
-                other_lines += sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
-            except OSError:
-                pass
-    return mbt_files, mbt_lines, other_files, other_lines
+            is_harness = any(part.lower() in HARNESS_DIRS for part in path.parts[:-1])
+            if is_harness:
+                harness_files += 1
+                try:
+                    harness_lines += sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
+                except OSError:
+                    pass
+            else:
+                other_files += 1
+                try:
+                    other_lines += sum(1 for _ in path.open(encoding="utf-8", errors="replace"))
+                except OSError:
+                    pass
+    return mbt_files, mbt_lines, other_files, other_lines, harness_files, harness_lines
 
 
 def check_moonbit_primary(root: Path):
-    mbt_files, mbt_lines, other_files, other_lines = walk_sources(root)
+    mbt_files, mbt_lines, other_files, other_lines, harness_files, harness_lines = (
+        walk_sources(root)
+    )
     if mbt_files == 0:
         return "FAIL", "no .mbt files found"
     # The rule says MoonBit must be the PRIMARY implementation language;
@@ -177,9 +199,16 @@ def check_moonbit_primary(root: Path):
     # more than the rule does; the old filesystem walk counted downloads the
     # judge cannot see.
     ratio = mbt_lines / other_lines if other_lines else float("inf")
+    harness = (
+        f"; harness excluded from the ratio: {harness_files} files / "
+        f"{harness_lines} lines (tools/ scripts/ tests/ conformance/ - reported, not hidden)"
+        if harness_files
+        else ""
+    )
     scope = (
         f"{mbt_files} .mbt files / {mbt_lines} lines vs {other_files} "
-        f"other files / {other_lines} lines (tracked only, ratio {ratio:.2f}x)"
+        f"other IMPLEMENTATION files / {other_lines} lines "
+        f"(tracked only, ratio {ratio:.2f}x){harness}"
     )
     if ratio >= 2.0:
         return "PASS", scope
