@@ -655,3 +655,16 @@ registry，而 CI 不应把可达性当成提交前提。定位是"发布前手�
 
 教训同一条：**"YAML 语法正确"不是检查，"它跑过而且绿了"才是**。54 次运行没绿过，
 而 README 里写着"CI 覆盖"。
+
+## D74 - 本地与 CI 工具链不一致：三条"门禁说谎"的来源
+
+1. **`moon check` 增量**：本地 "no work to do" 跳过真实警告，CI 全量才报。
+2. **版本判据相反**：`core/moon.pkg` 的 `moonbitlang/core/json`，本机 0.1.20261104
+   必须有（否则 `Cannot use @json`），CI 的 0.1.20261117 判 `unused_package`。
+   CDN 只提供 `latest`（版本化 URL 全 403），无法钉死。CI 门禁因此允许这一条已知
+   分歧，其余诊断照常失败，并打印该消息。
+3. **`%TEMP%` 不可写**：23 个 `@fs.tmpdir(): Access is denied` 是环境不是代码；
+   修在测试基座（给子进程传可写 TEMP），不动库代码。
+
+写进 README 的结论：本地与 CI 版本不同时，"绿"的含义不同；CI 日志里的
+`moon version --all` 就是判断这一点的依据。

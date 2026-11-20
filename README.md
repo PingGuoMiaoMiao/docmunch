@@ -168,6 +168,16 @@ docs/      pre-research, decision records, competition notes
 
 Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md).
 
+## 本地环境两条注意
+
+1. **工具链版本差会让本地与 CI 的"绿"含义不同**。CI 装 `latest`（版本化 URL 在
+   CDN 上 403，无法钉死），本机可能更旧。判断依据在 CI 日志里（`moon version --all`）。
+   两个版本在个别诊断上结论相反（本仓库已知一处：`core/` 的 json 依赖在新版被判
+   unused），CI 因此只允许这一条并把它打印出来。
+2. **`moon test` 报 `@fs.tmpdir(): Access is denied` 时是环境问题**：某些机器的
+   `%TEMP%` 不允许进程建目录。把 `TEMP`/`TMP` 指到可写目录即可（自检脚本已自动指向
+   工程内 `.testtmp/`）；库代码无需改动。
+
 ## 变更记录
 
 [CHANGELOG.md](CHANGELOG.md) 按**能力**组织（不是 git log 的搬运），每条带可复跑命令与 commit；被否决的方向与已知限制也记在里面。
