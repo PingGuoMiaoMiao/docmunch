@@ -178,6 +178,11 @@ Full rationale and rejected alternatives: [docs/decisions.md](docs/decisions.md)
    `%TEMP%` 不允许进程建目录。把 `TEMP`/`TMP` 指到可写目录即可（自检脚本已自动指向
    工程内 `.testtmp/`）；库代码无需改动。
 
+## 当前状态
+
+[docs/status.md](docs/status.md) 是一份**实测快照**：版本、已发布版本、测试数、验收/一致性
+结果、可主张与不可主张的清单，每条都附取值命令——过期了可以自己重算，不必相信文档。
+
 ## 变更记录
 
 [CHANGELOG.md](CHANGELOG.md) 按**能力**组织（不是 git log 的搬运），每条带可复跑命令与 commit；被否决的方向与已知限制也记在里面。
