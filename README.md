@@ -9,6 +9,31 @@ existing codebase — see [docs/pre-research.md](docs/pre-research.md) for why
 (the named reference repo is empty, and the most complete reference is
 non-commercial-licensed, so only its *design* was studied).
 
+## 30 秒看懂
+
+```sh
+moon build --target native
+moon run cmd/main --target native -- delete demo          # 先清掉上一次的演示索引，输出才可复现
+moon run cmd/main --target native -- index-dir docs --repo demo
+moon run cmd/main --target native -- search demo "BM25 检索"
+moon run cmd/main --target native -- section demo "demo::docs/p12-bm25.md::p12-bm25#1" --verify
+```
+
+第三条建索引，第四条按标题层级检索，第五条按 id 取回那一节并校验字节哈希。
+在本仓库 `docs/` 上运行的真实输出：
+
+```text
+repo=demo files=28 changed=28 skipped=0 failed=0 docs=28 sections=379 root=.doc-index
+score=896 level=1 id=demo::docs/p12-bm25.md::p12-bm25#1 title=P12 检索升级：BM25
+score=800 level=3 id=demo::docs/reference-comparison.md::h5322d412/5/a-1-2#3 title=阶段 A：检索升级（1–2 天）—— 最高性价比
+score=773 level=2 id=demo::docs/devlog.md::moonbit/bm25#2 title=五、检索：从手写加分到 BM25
+verified=true bytes=220
+# P12 检索升级：BM25
+```
+
+**这就是它做的事**：交给 Agent 的从来不是整篇文档，而是"第 2 个标题下的那一节"，
+带字节区间和 sha256——可验证、可复现、可增量。
+
 ## Status
 
 | Phase | Scope | State |

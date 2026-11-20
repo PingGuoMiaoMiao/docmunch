@@ -215,41 +215,61 @@ def check_links(root: Path):
 def check_documented_transcript(root: Path):
     """Lines quoted from a tool's output must actually appear in that output.
 
-    README shows a real transcript; hand-edited examples rot the moment the
-    program changes a label (this already happened once: the block said
-    `reconciled=true` while the program prints `matches=true`). Annotation
-    suffixes are stripped at `<-` so the sample can carry explanations.
+    Two shapes are supported, because the two projects present a demo
+    differently: one transcript block whose lines are all output, and a block of
+    commands followed by a block of expected output. Either way the commands are
+    executed for real - a hand-edited sample rots the moment a label changes,
+    which already happened once (reconciled=true while the program printed
+    matches=true).
     """
     readme = root / "README.md"
-    cmd = ["moon", "run", "adapters/mqtt/bin", "--target", "native"]
-    if not readme.is_file() or not (root / "adapters" / "mqtt").is_dir():
-        return ("SKIP", "no README quickstart transcript to verify")
+    if not readme.is_file():
+        return ("SKIP", "no README.md")
     body = read(readme)
-    marker = "你会拿到什么"
-    if marker not in body:
-        return ("SKIP", "README has no \"what you get\" transcript block")
-    after = body.split(marker, 1)[1]
-    blocks = re.findall(r"```[a-z]*\n(.*?)```", after, re.S)
-    if not blocks:
-        return ("SKIP", "no fenced block after the transcript heading")
-    quoted = []
-    for raw in blocks[0].splitlines():
-        line = raw.split("<-")[0].strip()
-        # skip the command echo and pure prose lines
-        if line and not line.startswith("moon "):
-            quoted.append(line)
-    try:
-        res = subprocess.run(
-            cmd, cwd=root, capture_output=True, text=True,
-            encoding="utf-8", errors="replace", timeout=600,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return ("SKIP", f"could not run the transcript command: {exc}")
-    actual = res.stdout + res.stderr
+
+    if "你会拿到什么" in body and (root / "adapters" / "mqtt").is_dir():
+        after = body.split("你会拿到什么", 1)[1]
+        blocks = re.findall(r"```[a-z]*\n(.*?)```", after, re.S)
+        if not blocks:
+            return ("SKIP", "no fenced block after the transcript heading")
+        quoted = []
+        for raw in blocks[0].splitlines():
+            line = raw.split("<-")[0].strip()
+            if line and not line.startswith("moon "):
+                quoted.append(line)
+        cmds = [["moon", "run", "adapters/mqtt/bin", "--target", "native"]]
+    elif "30 秒看懂" in body:
+        after = body.split("30 秒看懂", 1)[1]
+        blocks = re.findall(r"```[a-z]*\n(.*?)```", after, re.S)
+        if len(blocks) < 2:
+            return ("SKIP", "expected a commands block and an output block")
+        # shlex, not str.split: the demo queries contain spaces inside quotes
+        import shlex
+        cmds = [
+            shlex.split(line.strip())
+            for line in blocks[0].splitlines()
+            if line.strip().startswith("moon run ")
+        ]
+        quoted = [l.strip() for l in blocks[1].splitlines() if l.strip()]
+        if not cmds:
+            return ("SKIP", "no moon run commands in the demo block")
+    else:
+        return ("SKIP", "no recognised demo/transcript heading")
+
+    actual = ""
+    for cmd in cmds:
+        try:
+            res = subprocess.run(
+                cmd, cwd=root, capture_output=True, text=True,
+                encoding="utf-8", errors="replace", timeout=600,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return ("SKIP", f"could not run the transcript command: {exc}")
+        actual += (res.stdout or "") + (res.stderr or "")
     missing = [q for q in quoted if q not in actual]
     if missing:
         return ("FAIL", "quoted lines absent from real output: " + "; ".join(missing[:4]))
-    return ("PASS", f"{len(quoted)} quoted lines found in the real transcript")
+    return ("PASS", f"{len(quoted)} quoted lines found in the real output")
 
 
 def check_adr_count_claims(root: Path, actual):
