@@ -37,6 +37,11 @@ jobs:
           moon version --all
           moon update
 
+      # Tests passing while warnings accumulate is exactly how an unused import
+      # sat unnoticed; this is the gate that would have caught it.
+      - name: Check (deny warnings)
+        run: moon check --target native --deny-warn
+
       - name: Format
         # Hand-written sources only: *.generated.mbti is compiler output, and a
         # newer moonc renames API symbols in it (observed: @json.JsonPath ->

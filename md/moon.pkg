@@ -1,9 +1,14 @@
 import {
   "moonbit-community/html",
   "moonbit-community/html/src" @htmlsrc,
-  "moonbit-community/cmark/cmark_html",
   "moonbitlang/core/json",
   "tonyfettes/url",
   "PingGuoMiaoMiao/docmunch/core/text",
   "PingGuoMiaoMiao/docmunch/extract",
 }
+
+// cmark is used only by the white-box test that re-parses our generated
+// Markdown; the package itself does not depend on it.
+import {
+  "moonbit-community/cmark/cmark_html",
+} for "wbtest"

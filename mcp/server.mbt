@@ -80,6 +80,7 @@ fn text_result(s : String) -> @mcpsdk.ToolResult {
 }
 
 ///|
+  #warnings("-result_error_return")
 fn failure(msg : String) -> Result[@mcpsdk.ToolResult, @mcpsdk.MCPError] {
   Ok(@mcpsdk.ToolResult::error(msg))
 }
@@ -106,6 +107,7 @@ fn sections_json(repo : String, sections : Array[@core.Section]) -> String {
 ///|
 /// Success envelope for the write paths: invalidate the repo's cached index
 /// first, so the next read cannot see the pre-write snapshot.
+  #warnings("-result_error_return")
 fn index_ok(
   repo : String,
   doc_path : String,
@@ -128,6 +130,7 @@ fn index_ok(
 }
 
 ///|
+  #warnings("-result_error_return")
 async fn index_inputs(
   root : String,
   input : String,
