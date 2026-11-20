@@ -20,6 +20,29 @@
 | GitHub Star / Fork / Issue | 1 / 0 / 0 | `gh api repos/PingGuoMiaoMiao/docmunch` |
 | CI | 全绿（本提交） | `gh run list --limit 1` |
 
+
+## 全新 clone 演练（2026-11-20 实测）
+
+模拟评审：在空目录 `git clone`（152 个文件，无 `.mooncakes`、无 `_build`），
+照文档逐条执行：
+
+| 命令 | 退出码 | 结果 |
+| --- | --- | --- |
+| `moon test --target native` | 0 | **116/116**，17.6 s（含首次依赖下载） |
+| `python tools/selfcheck.py` | 0 | 15 项：14 pass / 0 warn / 1 skip |
+| `python tools/acceptance.py --skip-build` | 0 | 7 pass / 1 warn（WARN 是"跳过构建"的提示） |
+| `python tools/consistency.py` | 0 | **7 ok / 0 fail** |
+| `python tools/markdown_golden.py` | 0 | 黄金文件逐字节一致 |
+| `python tools/toc_check.py` | 0 | 分节字节契约通过 |
+| `python conformance/selftest.py` | 0 | 五种注入违规全部被检查器报出 |
+| `moon run cmd/main -- --help` | 0 | 打印 `docmunch 0.3.1`（与 `moon.mod` 一致） |
+| `... detect <文档站 URL>` | 0 | `platform=moonbit` |
+| `... toc <fixture> --verify` | 0 | 每节 `hash_ok=true` |
+| `... index-dir docs --repo selfcheck` | 0 | 28 篇 / 379 节 |
+
+**这条演练本身就是主张**：本文件的数字，评审在干净机器上都能复现，不必先相信作者。
+未覆盖：非 Windows 平台，以及首次依赖下载的网络耗时（本机 registry 有缓存）。
+
 ## 对外可主张 / 不可主张
 
 **可以主张**（每条都有可复跑证据）：
