@@ -9,27 +9,32 @@ existing codebase — see [docs/pre-research.md](docs/pre-research.md) for why
 (the named reference repo is empty, and the most complete reference is
 non-commercial-licensed, so only its *design* was studied).
 
+> 准备提交？看 [docs/submit-now.md](docs/submit-now.md)（一页清单：你要做什么、做之前该看到什么结果）。
+
 ## 30 秒看懂
 
 ```sh
 moon build --target native
-moon run cmd/main --target native -- delete demo          # 先清掉上一次的演示索引，输出才可复现
-moon run cmd/main --target native -- index-dir docs --repo demo
-moon run cmd/main --target native -- search demo "BM25 检索"
-moon run cmd/main --target native -- section demo "demo::docs/p12-bm25.md::p12-bm25#1" --verify
+moon run cmd/main --target native -- delete demo                    # 清掉上一次的演示索引，输出才可复现
+moon run cmd/main --target native -- index-dir fixtures/markdown --repo demo
+moon run cmd/main --target native -- search demo "readability"
+moon run cmd/main --target native -- section demo "demo::fixtures/markdown/readability-readme.md::readability-js#1" --verify
 ```
 
 第三条建索引，第四条按标题层级检索，第五条按 id 取回那一节并校验字节哈希。
-在本仓库 `docs/` 上运行的真实输出：
+在仓库自带的 fixture 上运行的真实输出（内容固定，所以可复现）：
 
 ```text
-repo=demo files=28 changed=28 skipped=0 failed=0 docs=28 sections=379 root=.doc-index
-score=896 level=1 id=demo::docs/p12-bm25.md::p12-bm25#1 title=P12 检索升级：BM25
-score=800 level=3 id=demo::docs/reference-comparison.md::h5322d412/5/a-1-2#3 title=阶段 A：检索升级（1–2 天）—— 最高性价比
-score=773 level=2 id=demo::docs/devlog.md::moonbit/bm25#2 title=五、检索：从手写加分到 BM25
-verified=true bytes=220
-# P12 检索升级：BM25
+repo=demo files=4 changed=4 skipped=0 failed=0 docs=4 sections=16 root=.doc-index
+score=144 level=1 id=demo::fixtures/markdown/readability-readme.md::readability-js#1 title=Readability.js
+score=141 level=2 id=demo::fixtures/markdown/readability-readme.md::readability-js/installation#2 title=Installation
+score=139 level=2 id=demo::fixtures/markdown/readability-readme.md::readability-js/basic-usage#2 title=Basic usage
+verified=true bytes=174
+# Readability.js
 ```
+
+索引本仓库文档也行（`-- index-dir docs --repo self`），但那种演示的数字会随文档增删而变，
+所以上面引用的是固定 fixture。
 
 **这就是它做的事**：交给 Agent 的从来不是整篇文档，而是"第 2 个标题下的那一节"，
 带字节区间和 sha256——可验证、可复现、可增量。
