@@ -121,6 +121,11 @@ jobs:
 
       - name: Toolchain version
         run: moon version --all
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
       - name: Registry index, then self-check
         # The self-check runs `moon test` internally, so it needs the registry.
         run: |
