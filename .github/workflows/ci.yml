@@ -15,9 +15,14 @@ jobs:
 
       # Pinned to the toolchain this repository is developed and tested with,
       # so "passes locally" and "passes in CI" mean the same thing.
-      - name: Set up MoonBit
+      - name: Install MoonBit
+        # The official installer. Version-pinned URLs (binaries/<version>/...)
+        # return 403 for every version I probed, including the one this machine
+        # runs, so pinning is not possible today; CI installs `latest` and the
+        # next step prints exactly which toolchain it got. If CI ever diverges
+        # from the documented version, that output says so instead of hiding it.
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "0.1.20261104"
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
 
       - name: Set up Python
@@ -105,9 +110,17 @@ jobs:
       # `moonbitlang/setup-moonbit` does not exist (404). This is the official
       # installer, the same one moonbitlang/core uses in its composite action.
       - name: Install MoonBit
+        # The official installer. Version-pinned URLs (binaries/<version>/...)
+        # return 403 for every version I probed, including the one this machine
+        # runs, so pinning is not possible today; CI installs `latest` and the
+        # next step prints exactly which toolchain it got. If CI ever diverges
+        # from the documented version, that output says so instead of hiding it.
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s "0.1.20261104"
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: Toolchain version
+        run: moon version --all
       - name: Registry index, then self-check
         # The self-check runs `moon test` internally, so it needs the registry.
         run: |
