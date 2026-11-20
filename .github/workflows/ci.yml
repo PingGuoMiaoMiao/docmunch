@@ -38,7 +38,16 @@ jobs:
           moon update
 
       - name: Format
-        run: moon fmt --check
+        # Hand-written sources only: *.generated.mbti is compiler output, and a
+        # newer moonc renames API symbols in it (observed: @json.JsonPath ->
+        # @json.DecodeContext between 0.1.20261104 and 0.1.20261117).
+        run: |
+          moon fmt
+          if ! git diff --exit-code -- '*.mbt' '*.mbt.md'; then
+            echo "::error::moon fmt produced changes in hand-written sources"
+            git diff --stat -- '*.mbt' '*.mbt.md'
+            exit 1
+          fi
 
       - name: Unit tests
         run: moon test
@@ -107,8 +116,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # `moonbitlang/setup-moonbit` does not exist (404). This is the official
-      # installer, the same one moonbitlang/core uses in its composite action.
+        with:
+          # the self-check verifies that commit hashes quoted in the docs exist
+          fetch-depth: 0
+      # `moonbitlang/setup-moonbit` does not exist (404); this is the official
+      # installer. No version pin - pinned CDN URLs 403 - so the next step
+      # reports the resolved toolchain.
       - name: Install MoonBit
         # The official installer. Version-pinned URLs (binaries/<version>/...)
         # return 403 for every version I probed, including the one this machine
