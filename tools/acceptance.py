@@ -43,12 +43,12 @@ def out(msg=""):
     print(msg)
 
 
-def run(cmd, cwd, timeout=900):
+def run(cmd, cwd, timeout=900, env=None):
     started = time.time()
     try:
         proc = subprocess.run(
             cmd, cwd=str(cwd), capture_output=True, text=True,
-            encoding="utf-8", errors="replace", timeout=timeout,
+            encoding="utf-8", errors="replace", timeout=timeout, env=env,
         )
         return proc.returncode, (proc.stdout or "") + (proc.stderr or ""), time.time() - started
     except subprocess.TimeoutExpired:
@@ -247,6 +247,27 @@ def check_history(root: Path, since: str):
     return "PASS", evidence
 
 
+def harness_env(root: Path):
+    """Environment for running the test suite.
+
+    On locked-down Windows machines %TEMP% can deny directory creation to the
+    process, so every test that calls @fs.tmpdir() fails with "Access is denied"
+    - an environment defect that presents as two dozen broken tests. Pointing
+    TEMP/TMP at a directory inside the project keeps the gate honest without
+    touching library code: the library is right to use the system temp dir, this
+    is a harness concern.
+    """
+    env = dict(os.environ)
+    tmp = root / ".testtmp"
+    try:
+        tmp.mkdir(exist_ok=True)
+        env["TEMP"] = str(tmp)
+        env["TMP"] = str(tmp)
+    except OSError:
+        pass
+    return env
+
+
 def declared_target(root: Path) -> str:
     """The target the module itself declares, falling back to native.
 
@@ -274,7 +295,9 @@ def check_runnable(root: Path, skip_build: bool):
     # figure (26) that matches neither the docs (39) nor the native run - a
     # mismatch a judge would see immediately.
     target = declared_target(root)
-    code, text, secs = run([moon, "test", "--target", target], root)
+    code, text, secs = run(
+        [moon, "test", "--target", target], root, env=harness_env(root)
+    )
     rows = re.findall(
         r"Total tests:\s*(\d+),\s*passed:\s*(\d+),\s*failed:\s*(\d+)", text
     )
