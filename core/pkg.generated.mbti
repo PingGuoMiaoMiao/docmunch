@@ -20,6 +20,8 @@ pub fn utf8_len(String) -> Int32
 
 pub fn utf8_len_of_char(Char) -> Int32
 
+pub let version : String
+
 // Errors
 
 // Types and methods

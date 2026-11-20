@@ -5,7 +5,7 @@
 
 ///|
 fn usage() -> Unit {
-  println("docmunch 0.1.0")
+  println("docmunch " + @core.version)
   println("usage:")
   println("  docmunch fetch <url> [--out PATH] [--allow-private] [--no-cache]")
   println(

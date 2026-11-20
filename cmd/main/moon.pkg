@@ -3,6 +3,7 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/async/stdio",
+  "PingGuoMiaoMiao/docmunch/core",
   "PingGuoMiaoMiao/docmunch/core/text",
   "PingGuoMiaoMiao/docmunch/http",
   "PingGuoMiaoMiao/docmunch/extract",

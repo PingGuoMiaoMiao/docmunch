@@ -352,6 +352,50 @@ def check_registry_facts(root: Path):
     )
 
 
+def check_version_literals(root: Path):
+    """The version the code advertises must equal moon.mod, in exactly one place.
+
+    Found by running the CLI: it printed "docmunch 0.1.0" while the manifest said
+    0.3.1, and the MCP server advertised that same stale string to every client.
+    A version is a fact about the release, so it gets one source in code plus a
+    check that nothing else hard-codes one.
+    """
+    manifest = root / "moon.mod"
+    if not manifest.is_file():
+        return ("SKIP", "no moon.mod")
+    m = re.search(r'^version\s*=\s*"([^"]+)"', read(manifest), re.M)
+    if not m:
+        return ("SKIP", "moon.mod has no version field")
+    declared = m.group(1)
+    allowed = root / "core" / "version.mbt"
+    problems = []
+    checked = 0
+    # Only a literal that IS a version counts; a looser pattern matched the
+    # "127.0.0" inside URLs and produced pure noise.
+    semver = re.compile(r'"(\d+\.\d+\.\d+)"')
+    for mbt in root.rglob("*.mbt"):
+        if "_build" in mbt.parts or ".mooncakes" in mbt.parts:
+            continue
+        rel = mbt.relative_to(root).as_posix()
+        for lineno, line in enumerate(read(mbt).splitlines(), 1):
+            for found in semver.finditer(line):
+                checked += 1
+                if mbt != allowed:
+                    problems.append(
+                        f"{rel}:{lineno}: hard-codes a version ({found.group(0)}); "
+                        "use @core.version instead"
+                    )
+                elif declared not in found.group(0):
+                    problems.append(
+                        f"{rel}:{lineno}: says {found.group(0)} but moon.mod says {declared}"
+                    )
+    if problems:
+        return ("FAIL", "; ".join(problems[:4]))
+    if checked == 0:
+        return ("SKIP", "no version literals in .mbt sources")
+    return ("PASS", f"{checked} version literal(s) agree with moon.mod ({declared})")
+
+
 def check_cited_commits(root: Path):
     """Every commit hash quoted in the docs must exist in this repository.
 
@@ -422,6 +466,7 @@ def main() -> int:
         ("Links", check_links(root)),
         ("Transcript", check_documented_transcript(root)),
         ("Cited commits", check_cited_commits(root)),
+        ("Version", check_version_literals(root)),
         ("ADR counts", check_adr_count_claims(root, adr_total(root))),
     ]
     if args.with_registry:

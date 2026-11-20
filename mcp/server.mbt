@@ -211,7 +211,7 @@ pub fn build_server(
   root : String,
   auth_token? : String,
 ) -> @mcpsdk.MCPServer raise @mcpsdk.MCPError {
-  let mut server = @mcpsdk.MCPServer::MCPServer("docmunch", "0.1.0")
+  let mut server = @mcpsdk.MCPServer::MCPServer("docmunch", @core.version)
   // Serialize index mutations: the HTTP transport handles requests concurrently
   // and index writes are read-modify-write (D44). The array keeps one shared
   // mutex across the closures that capture it.

@@ -668,3 +668,22 @@ registry，而 CI 不应把可达性当成提交前提。定位是"发布前手�
 
 写进 README 的结论：本地与 CI 版本不同时，"绿"的含义不同；CI 日志里的
 `moon version --all` 就是判断这一点的依据。
+
+## D75 - 版本号只能有一个来源，且必须等于 `moon.mod`
+
+抓法很偶然：跑 `moon run cmd/main -- --help`，横幅打印 **`docmunch 0.1.0`**，而
+`moon.mod` 是 0.3.1。同一串还出现在 `MCPServer::MCPServer("docmunch", "0.1.0")`
+——**每个连上来的 MCP 客户端看到的 server 版本都是错的**。
+
+修法：`core/version.mbt` 一个 `pub let version`，CLI 横幅与 MCP server 都引用它。
+MoonBit 没有构建期版本注入（manifest 对编译器不可见），常量是唯一可行形态；能自动化
+的是**检查**：
+
+- `.mbt` 里任何"整串就是一个版本"的字面量必须位于 `core/version.mbt`，否则 FAIL；
+- 该字面量必须等于 `moon.mod` 的 `version`。
+
+模式一开始写松了，把 URL 里的 `127.0.0` 当成版本，噪音一堆；收紧为整串匹配后只剩
+真版本。失败路径验证过：把常量改成 0.3.0，立刻
+`FAIL Version: says "0.3.0" but moon.mod says 0.3.1`。
+
+这类漂移与测试数漂移同性质：**没人会因为它而失败，所以必须机器盯**。
