@@ -644,3 +644,14 @@ registry，而 CI 不应把可达性当成提交前提。定位是"发布前手�
 ①"已发布版本"是否含 latest ②下载数是否报大。网络失败 → SKIP。
 
 验证过会失败：把 adoption.md 的下载改成 99，立即 FAIL 并指明两边的数字。
+
+## D73 - CI 一直红：consistency job 引用了不存在的 action
+
+与姊妹项目同源（对方记为 D27）：`moonbitlang/setup-moonbit` 是 404 的 action。
+本仓库主 `test` job 一直绿，只有后来加的 consistency job 全错。另两处只在 CI 才现形
+的问题一并修掉：shallow clone 让"文档引用的 commit"被误判为不存在（改
+`fetch-depth: 0`，并让工具识别 shallow 后 SKIP）；`moon fmt --check` 会被新版工具链
+重写的 `*.generated.mbti` 触发（改为只查手写源文件）。
+
+教训同一条：**"YAML 语法正确"不是检查，"它跑过而且绿了"才是**。54 次运行没绿过，
+而 README 里写着"CI 覆盖"。
