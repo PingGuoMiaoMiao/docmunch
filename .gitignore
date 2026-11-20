@@ -36,3 +36,5 @@ _session_zip/
 
 # scratch index written by tools/consumer_check.py if it runs from the repo root
 probe-index/
+
+.testtmp/
