@@ -9,7 +9,7 @@ existing codebase — see [docs/pre-research.md](docs/pre-research.md) for why
 (the named reference repo is empty, and the most complete reference is
 non-commercial-licensed, so only its *design* was studied).
 
-> 准备提交？看 [docs/submit-now.md](docs/submit-now.md)（一页清单：你要做什么、做之前该看到什么结果）。
+> 准备提交？看 [docs/submit-now.md](docs/submit-now.md)；两个项目的收官状态汇总见 [docs/delivery.md](docs/delivery.md)（一页清单：你要做什么、做之前该看到什么结果）。
 
 ## 30 秒看懂
 
