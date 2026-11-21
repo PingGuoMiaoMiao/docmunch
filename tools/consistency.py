@@ -394,7 +394,7 @@ def check_version_literals(root: Path):
     # "127.0.0" inside URLs and produced pure noise.
     semver = re.compile(r'"(\d+\.\d+\.\d+)"')
     for mbt in root.rglob("*.mbt"):
-        if "_build" in mbt.parts or ".mooncakes" in mbt.parts:
+        if "_build" in mbt.parts or ".mooncakes" in mbt.parts or ".repos" in mbt.parts:
             continue
         rel = mbt.relative_to(root).as_posix()
         for lineno, line in enumerate(read(mbt).splitlines(), 1):
