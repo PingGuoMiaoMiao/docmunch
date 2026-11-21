@@ -7,14 +7,14 @@
 
 | 指标 | 数值 | 来源 |
 | --- | --- | --- |
-| MoonCakes 下载 | **44** | `mooncakes.io/api/v0/manifest/PingGuoMiaoMiao/docmunch` → `downloads` |
+| MoonCakes 下载 | **51** | `mooncakes.io/api/v0/manifest/PingGuoMiaoMiao/docmunch` → `downloads` |
 | MoonCakes 已发布版本 | 0.3.1 / 0.3.0 / 0.2.1 / 0.2.0 | 同上 → `versions` |
 | MoonCakes 依赖者 | **0** | 同上 → `dependents` |
 | GitHub Star / Fork / Issue | 0 / 0 / 0 | `gh api repos/PingGuoMiaoMiao/docmunch` |
 | 仓库克隆（近 14 天） | **180 次 / 67 个独立来源** | `gh api …/traffic/clones` |
 | 提交数 | 68 | `git log --oneline | wc -l` |
 
-**怎么读**：35 次下载和 67 个独立克隆说明**有人在看**；0 依赖者、0 star、0 fork 说明**还没有人把用起来的外部证据留下来**。这两件事不能混为一谈——所以本文件不把"下载量"写成"被采用"。
+**怎么读**：51 次下载和 67 个独立克隆说明**有人在看**；0 依赖者、0 star、0 fork 说明**还没有人把用起来的外部证据留下来**。这两件事不能混为一谈——所以本文件不把"下载量"写成"被采用"。
 
 ## 2. 可消费性证明（比下载量更硬）
 
@@ -80,7 +80,7 @@ all rules passed
 
 | 强度 | 事件 | 现状 |
 | --- | --- | --- |
-| 弱 | 下载 / 克隆 / star | 35 / 180 / 0 |
+| 弱 | 下载 / 克隆 / star | 51 / 180 / 0 |
 | 中 | 外部项目在 `moon.mod` 里依赖 `PingGuoMiaoMiao/docmunch` | **0** |
 | 中 | 外部实现通过 `conformance/check.py` 且把自己的通过结果贴出来 | **0** |
 | 强 | 有 commit 的 fork、issue、PR | **0** |

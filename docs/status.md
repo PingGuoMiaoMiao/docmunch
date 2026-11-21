@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 仓库版本 | `0.3.1` | `moon.mod` 的 `version` |
 | MoonCakes 已发布版本 | `0.2.0` / `0.2.1` / `0.3.0` / **`0.3.1`（最新，与仓库一致）** | `mooncakes.io/api/v0/manifest/PingGuoMiaoMiao/docmunch` |
-| MoonCakes 下载 | 50 | 同上 `downloads` |
+| MoonCakes 下载 | 51 | 同上 `downloads` |
 | 测试 | **116 / 116 全绿** | `moon test --target native` |
 | 验收自检 | **8 PASS / 0 WARN / 0 FAIL** | `python tools/acceptance.py --since 2026-11-01` |
 | 文档一致性 | **6 / 6 通过** | `python tools/consistency.py` |
